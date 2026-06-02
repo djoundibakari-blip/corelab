@@ -1,57 +1,42 @@
 const mongoose = require('mongoose');
 
-const quizAttemptSchema = new mongoose.Schema({
-  quizId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Quiz',
-    required: true
-  },
+const attemptSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  answers: [{
-    questionIndex: {
-      type: Number,
-      required: true
-    },
-    selectedAnswer: {
-      type: Number,
-      required: true
-    },
-    isCorrect: {
-      type: Boolean,
-      required: true
-    }
-  }],
+  quizId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Quiz',
+    required: true
+  },
   score: {
     type: Number,
     required: true,
     min: 0,
-    max: 20
+    max: 100
   },
   passed: {
     type: Boolean,
     required: true
   },
-  startedAt: {
+  submittedAt: {
     type: Date,
     default: Date.now
-  },
-  completedAt: {
-    type: Date
-  },
-  timeSpent: {
-    type: Number
   }
 });
 
-quizAttemptSchema.pre('save', function(next) {
-  if (this.completedAt && this.startedAt) {
-    this.timeSpent = Math.floor((this.completedAt - this.startedAt) / 1000);
+// Calcul dynamique de 'passed' avant sauvegarde
+attemptSchema.pre('save', async function(next) {
+  if (!this.isModified('passed')) {
+    const Quiz = mongoose.model('Quiz');
+    const quiz = await Quiz.findById(this.quizId);
+    if (quiz) {
+      this.passed = this.score >= quiz.passingScore;
+    }
   }
   next();
 });
 
-module.exports = mongoose.model('QuizAttempt', quizAttemptSchema);
+module.exports = mongoose.model('Attempt', attemptSchema);

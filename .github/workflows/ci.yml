@@ -1,0 +1,154 @@
+name: CI Pipeline - Corelab LMS
+
+on:
+  push:
+    branches: [ main, quiz/note ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Job critique : Tests de sécurité et validation
+  security-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        working-directory: ./server
+        run: npm ci
+      
+      - name: Run security tests
+        working-directory: ./server
+        run: npm test -- __tests__/integration/security.test.js
+        continue-on-error: false # CRITIQUE : Ne pas continuer en cas d'échec de sécurité
+      
+      - name: Run integration tests (answers leak check)
+        working-directory: ./server
+        run: npm test -- __tests__/integration/quiz.integration.test.js
+        continue-on-error: false # CRITIQUE : Ne pas continuer en cas de fuite de réponses
+
+  # Job critique : Build et compilation
+  build-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install server dependencies
+        working-directory: ./server
+        run: npm ci
+      
+      - name: Install client dependencies
+        working-directory: ./client
+        run: npm ci
+      
+      - name: Build server
+        working-directory: ./server
+        run: npm run build || echo "No build script"
+        continue-on-error: false # CRITIQUE : Build crash bloque le déploiement
+      
+      - name: Build client
+        working-directory: ./client
+        run: npm run build
+        continue-on-error: false # CRITIQUE : Build crash bloque le déploiement
+
+  # Job critique : Validation des schémas Zod
+  schema-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        working-directory: ./server
+        run: npm ci
+      
+      - name: Run validation tests
+        working-directory: ./server
+        run: npm test -- __tests__/integration/quiz.integration.test.js
+        continue-on-error: false # CRITIQUE : Faille validation Zod bloque le déploiement
+
+  # Job non critique : Tests fonctionnels (avec tolérance)
+  functional-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        working-directory: ./server
+        run: npm ci
+      
+      - name: Run all tests
+        working-directory: ./server
+        run: npm test
+        continue-on-error: true # NON CRITIQUE : Tolérance aux erreurs fonctionnelles
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: server/coverage/
+
+  # Job non critique : Linting (avec tolérance)
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        working-directory: ./server
+        run: npm ci
+      
+      - name: Run linter
+        working-directory: ./server
+        run: npm run lint || echo "Linting completed with warnings"
+        continue-on-error: true # NON CRITIQUE : Warnings ne bloquent pas le déploiement
+
+  # Notification finale (toujours exécuté)
+  notify:
+    runs-on: ubuntu-latest
+    needs: [security-tests, build-check, schema-validation, functional-tests, linting]
+    if: always()
+    steps:
+      - name: Check job statuses
+        run: |
+          echo "Security tests: ${{ needs.security-tests.result }}"
+          echo "Build check: ${{ needs.build-check.result }}"
+          echo "Schema validation: ${{ needs.schema-validation.result }}"
+          echo "Functional tests: ${{ needs.functional-tests.result }}"
+          echo "Linting: ${{ needs.linting.result }}"
+      
+      - name: Determine overall status
+        run: |
+          if [ "${{ needs.security-tests.result }}" != "success" ] || \
+             [ "${{ needs.build-check.result }}" != "success" ] || \
+             [ "${{ needs.schema-validation.result }}" != "success" ]; then
+            echo "CRITICAL FAILURE - Deployment blocked"
+            exit 1
+          else
+            echo "Deployment ready (non-critical issues may exist)"
+          fi

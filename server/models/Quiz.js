@@ -1,30 +1,17 @@
 const mongoose = require('mongoose');
 
 const questionSchema = new mongoose.Schema({
-  question: {
+  questionText: {
     type: String,
     required: true
   },
   options: [{
     type: String,
     required: true
-  }],
-  correctAnswer: {
-    type: Number,
-    required: true,
-    min: 0
-  }
+  }]
 });
 
 const quizSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true
-  },
-  description: {
-    type: String,
-    default: ''
-  },
   lessonId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Lesson',
@@ -35,17 +22,11 @@ const quizSchema = new mongoose.Schema({
     type: Number,
     required: true,
     min: 0,
-    max: 20,
-    default: 10
+    max: 100
   },
-  duration: {
-    type: Number,
-    default: 30
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
+  answers: [{
+    type: mongoose.Schema.Types.Mixed
+  }],
   createdAt: {
     type: Date,
     default: Date.now

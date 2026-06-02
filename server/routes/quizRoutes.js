@@ -1,30 +1,20 @@
 const express = require('express');
 const router = express.Router();
+const { auth, authorize } = require('../middleware/auth');
+const { validate } = require('../middleware/validation');
+const { quizImportSchema, quizSubmitSchema } = require('../middleware/validation');
 const {
-  getQuizzes,
-  getQuizById,
-  createQuiz,
-  updateQuiz,
-  deleteQuiz,
-  importQuiz
+  getQuizByLessonId,
+  submitQuiz,
+  importQuiz,
+  getAllAttempts
 } = require('../controllers/quizController');
 
-// Middleware d'authentification (à implémenter par Dev 1)
-// router.use(protect);
+// Routes Étudiant
+router.get('/lesson/:lessonId', auth, authorize('student'), getQuizByLessonId);
+router.post('/:id/submit', auth, authorize('student'), validate(quizSubmitSchema), submitQuiz);
 
-// Admin only routes (à implémenter par Dev 1)
-// router.use(adminOnly);
-
-router.route('/')
-  .get(getQuizzes)
-  .post(createQuiz);
-
-router.route('/import')
-  .post(importQuiz);
-
-router.route('/:id')
-  .get(getQuizById)
-  .put(updateQuiz)
-  .delete(deleteQuiz);
+// Routes Admin
+router.post('/import', auth, authorize('admin'), validate(quizImportSchema), importQuiz);
 
 module.exports = router;
