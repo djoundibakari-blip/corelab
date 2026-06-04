@@ -1,0 +1,20 @@
+{
+  "name": "w-web-201-lyn-2-1-corelab-4",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EpitechWebAcademiePromo2027/W-WEB-201-LYN-2-1-corelab-4.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EpitechWebAcademiePromo2027/W-WEB-201-LYN-2-1-corelab-4/issues"
+  },
+  "homepage": "https://github.com/EpitechWebAcademiePromo2027/W-WEB-201-LYN-2-1-corelab-4#readme"
+}

@@ -1,0 +1,41 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+}
+//   "name": "corelab",
+//   "version": "1.0.0",
+//   "private": true,
+//   "scripts": {
+//     "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+//     "build": "npm run build --prefix server && npm run build --prefix client",
+//     "start": "npm run start --prefix server"
+//   },
+//   "devDependencies": {
+//     "concurrently": "^9.0.0"
+//   },
+//   "keywords": [],
+//   "author": "",
+//   "license": "ISC",
+//   "bugs": {
+//     "url": "https://github.com/EpitechWebAcademiePromo2027/W-WEB-201-LYN-2-1-corelab-4/issues"
+//   },
+//   "homepage": "https://github.com/EpitechWebAcademiePromo2027/W-WEB-201-LYN-2-1-corelab-4#readme"
+// }
+
+{
+  "name": "server",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  }
+}
