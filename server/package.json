@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint . --max-warnings 999"
   },
   "keywords": ["express", "mongodb", "jwt"],
   "author": "",

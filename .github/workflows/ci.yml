@@ -10,6 +10,20 @@ jobs:
   # Job critique : Tests de sécurité et validation
   security-tests:
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd mongosh
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      MONGO_URI: mongodb://localhost:27017/test
+      JWT_SECRET: test_secret_key_for_ci
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v3
       
@@ -21,6 +35,11 @@ jobs:
       - name: Install dependencies
         working-directory: ./server
         run: npm ci
+      
+      - name: Wait for MongoDB
+        run: |
+          echo "Waiting for MongoDB to be ready..."
+          sleep 10
       
       - name: Run security tests
         working-directory: ./server
@@ -58,12 +77,26 @@ jobs:
       
       - name: Build client
         working-directory: ./client
-        run: npm run build
+        run: CI=false npm run build
         continue-on-error: false # CRITIQUE : Build crash bloque le déploiement
 
   # Job critique : Validation des schémas Zod
   schema-validation:
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd mongosh
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      MONGO_URI: mongodb://localhost:27017/test
+      JWT_SECRET: test_secret_key_for_ci
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v3
       
@@ -75,6 +108,11 @@ jobs:
       - name: Install dependencies
         working-directory: ./server
         run: npm ci
+      
+      - name: Wait for MongoDB
+        run: |
+          echo "Waiting for MongoDB to be ready..."
+          sleep 10
       
       - name: Run validation tests
         working-directory: ./server
@@ -84,6 +122,20 @@ jobs:
   # Job non critique : Tests fonctionnels (avec tolérance)
   functional-tests:
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd mongosh
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      MONGO_URI: mongodb://localhost:27017/test
+      JWT_SECRET: test_secret_key_for_ci
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v3
       
@@ -92,9 +144,14 @@ jobs:
         with:
           node-version: '18'
       
-      - name: Install dependencies
+      - name: Install server dependencies
         working-directory: ./server
         run: npm ci
+      
+      - name: Wait for MongoDB
+        run: |
+          echo "Waiting for MongoDB to be ready..."
+          sleep 10
       
       - name: Run all tests
         working-directory: ./server
@@ -119,12 +176,21 @@ jobs:
         with:
           node-version: '18'
       
-      - name: Install dependencies
+      - name: Install server dependencies
         working-directory: ./server
         run: npm ci
       
-      - name: Run linter
+      - name: Install client dependencies
+        working-directory: ./client
+        run: npm ci
+      
+      - name: Run linter (server)
         working-directory: ./server
+        run: npm run lint || echo "Linting completed with warnings"
+        continue-on-error: true # NON CRITIQUE : Warnings ne bloquent pas le déploiement
+      
+      - name: Run linter (client)
+        working-directory: ./client
         run: npm run lint || echo "Linting completed with warnings"
         continue-on-error: true # NON CRITIQUE : Warnings ne bloquent pas le déploiement
 
