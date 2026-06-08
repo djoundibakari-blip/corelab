@@ -1,7 +1,50 @@
 import { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import { quizService } from '@/services/quizService';
 import type { QuizAttempt } from '@/types';
 import { Search, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
+
+const MOCK_ATTEMPTS: QuizAttempt[] = [
+  {
+    _id: '1',
+    userId: { _id: 'u1', email: 'alice.martin@corp.io' },
+    quizId: { _id: 'q1', lessonId: 'JavaScript Basics' },
+    score: 92,
+    passed: true,
+    submittedAt: '2025-05-28T10:30:00Z',
+  },
+  {
+    _id: '2',
+    userId: { _id: 'u2', email: 'bob.chen@corp.io' },
+    quizId: { _id: 'q2', lessonId: 'React Hooks' },
+    score: 65,
+    passed: false,
+    submittedAt: '2025-05-27T14:45:00Z',
+  },
+  {
+    _id: '3',
+    userId: { _id: 'u3', email: 'carla.dupont@corp.io' },
+    quizId: { _id: 'q1', lessonId: 'JavaScript Basics' },
+    score: 78,
+    passed: true,
+    submittedAt: '2025-05-27T09:15:00Z',
+  },
+  {
+    _id: '4',
+    userId: { _id: 'u4', email: 'david.kim@corp.io' },
+    quizId: { _id: 'q3', lessonId: 'Node.js APIs' },
+    score: 55,
+    passed: false,
+    submittedAt: '2025-05-26T16:20:00Z',
+  },
+  {
+    _id: '5',
+    userId: { _id: 'u5', email: 'eva.rossi@corp.io' },
+    quizId: { _id: 'q2', lessonId: 'React Hooks' },
+    score: 88,
+    passed: true,
+    submittedAt: '2025-05-25T11:00:00Z',
+  },
+];
 
 export const Gradebook = () => {
   const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
@@ -10,69 +53,14 @@ export const Gradebook = () => {
   const [statusFilter, setStatusFilter] = useState<'All' | 'Passed' | 'Failed'>('All');
 
   useEffect(() => {
-    const fetchAttempts = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:4242/api/quiz-attempts/admin', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setAttempts(response.data);
-      } catch (error) {
-        console.error('Erreur lors du chargement du carnet de notes:', error);
-        // Fallback to mock data
-        setAttempts([
-          {
-            _id: '1',
-            userId: { _id: 'u1', email: 'alice.martin@corp.io' },
-            quizId: { _id: 'q1', lessonId: 'JavaScript Basics' },
-            answers: [0, 1, 2],
-            score: 92,
-            passed: true,
-            submittedAt: '2025-05-28T10:30:00Z',
-          },
-          {
-            _id: '2',
-            userId: { _id: 'u2', email: 'bob.chen@corp.io' },
-            quizId: { _id: 'q2', lessonId: 'React Hooks' },
-            answers: [0, 1],
-            score: 65,
-            passed: false,
-            submittedAt: '2025-05-27T14:45:00Z',
-          },
-          {
-            _id: '3',
-            userId: { _id: 'u3', email: 'carla.dupont@corp.io' },
-            quizId: { _id: 'q1', lessonId: 'JavaScript Basics' },
-            answers: [0, 1, 2],
-            score: 78,
-            passed: true,
-            submittedAt: '2025-05-27T09:15:00Z',
-          },
-          {
-            _id: '4',
-            userId: { _id: 'u4', email: 'david.kim@corp.io' },
-            quizId: { _id: 'q3', lessonId: 'Node.js APIs' },
-            answers: [0],
-            score: 55,
-            passed: false,
-            submittedAt: '2025-05-26T16:20:00Z',
-          },
-          {
-            _id: '5',
-            userId: { _id: 'u5', email: 'eva.rossi@corp.io' },
-            quizId: { _id: 'q2', lessonId: 'React Hooks' },
-            answers: [0, 1],
-            score: 88,
-            passed: true,
-            submittedAt: '2025-05-25T11:00:00Z',
-          },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAttempts();
+    quizService
+      .getAdminAttempts()
+      .then(setAttempts)
+      .catch(() => {
+        console.error('Erreur lors du chargement du carnet de notes');
+        setAttempts(MOCK_ATTEMPTS);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const filteredAttempts = useMemo(() => {
@@ -87,8 +75,11 @@ export const Gradebook = () => {
   }, [attempts, search, statusFilter]);
 
   const totalPassed = attempts.filter((a) => a.passed).length;
-  const passRate = Math.round((totalPassed / attempts.length) * 100);
-  const avgScore = Math.round(attempts.reduce((acc, a) => acc + a.score, 0) / attempts.length);
+  const passRate = attempts.length > 0 ? Math.round((totalPassed / attempts.length) * 100) : 0;
+  const avgScore =
+    attempts.length > 0
+      ? Math.round(attempts.reduce((acc, a) => acc + a.score, 0) / attempts.length)
+      : 0;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {

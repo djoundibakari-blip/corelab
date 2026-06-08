@@ -13,32 +13,32 @@ export interface AuthContextType {
   isAuthenticated: boolean;
 }
 
+// `answers` intentionally absent — server strips it via .select('-answers') (anti-triche)
 export interface Quiz {
   _id: string;
   lessonId: string;
   title: string;
   questions: QuizQuestion[];
   passingScore: number;
-  answers: number[][];
 }
 
+// `correct` intentionally absent — les bonnes réponses ne transitent jamais vers le client
 export interface QuizQuestion {
   question: string;
   options: string[];
-  correct?: number[];
+}
+
+// Shape exacte retournée par POST /api/quizzes/:id/submit
+export interface QuizSubmitResult {
+  score: number;
+  passed: boolean;
+  correctAnswers: boolean[];
 }
 
 export interface QuizAttempt {
   _id: string;
-  userId: {
-    _id: string;
-    email: string;
-  };
-  quizId: {
-    _id: string;
-    lessonId: string;
-  };
-  answers: number[];
+  userId: { _id: string; email: string };
+  quizId: { _id: string; lessonId: string; passingScore?: number };
   score: number;
   passed: boolean;
   submittedAt: string;
