@@ -7,8 +7,7 @@ const Attempt = require('../models/QuizAttempt');
 const getQuizByLessonId = async (req, res) => {
   try {
     const quiz = await Quiz.findOne({ lessonId: req.params.lessonId })
-      .select('-answers') // Projection pour ne pas retourner les bonnes réponses
-      .populate('lessonId', 'title');
+      .select('-answers'); // Projection stricte : les bonnes réponses ne transitent jamais vers le client
     
     if (!quiz) {
       return res.status(404).json({ message: 'Quiz not found for this lesson' });
@@ -59,16 +58,6 @@ const submitQuiz = async (req, res) => {
       passed,
       submittedAt: new Date()
     });
-
-    // Si réussi, mettre à jour atomiquement le Progress de l'utilisateur
-    if (passed) {
-      const Progress = mongoose.model('Progress');
-      await Progress.findOneAndUpdate(
-        { userId },
-        { $addToSet: { completedLessons: quiz.lessonId } },
-        { upsert: true, new: true }
-      );
-    }
 
     res.json({
       score,
