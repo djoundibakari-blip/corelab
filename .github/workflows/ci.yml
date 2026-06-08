@@ -25,22 +25,22 @@ jobs:
       JWT_SECRET: test_secret_key_for_ci
       NODE_ENV: test
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
-      
+
       - name: Install dependencies
         working-directory: ./server
         run: npm ci
-      
+
       - name: Wait for MongoDB
         run: |
           echo "Waiting for MongoDB to be ready..."
           sleep 10
-      
+
       - name: Run security tests
         working-directory: ./server
         run: npm test -- __tests__/integration/security.test.js
@@ -55,29 +55,29 @@ jobs:
   build-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
-      
+
       - name: Install server dependencies
         working-directory: ./server
         run: npm ci
-      
+
       - name: Install client dependencies
         working-directory: ./client
         run: npm ci
-      
+
       - name: Build server
         working-directory: ./server
         run: npm run build || echo "No build script"
         continue-on-error: false # CRITIQUE : Build crash bloque le déploiement
-      
+
       - name: Build client
         working-directory: ./client
-        run: CI=false npm run build
+        run: npm run build
         continue-on-error: false # CRITIQUE : Build crash bloque le déploiement
 
   # Job critique : Validation des schémas Zod
@@ -98,22 +98,22 @@ jobs:
       JWT_SECRET: test_secret_key_for_ci
       NODE_ENV: test
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
-      
+
       - name: Install dependencies
         working-directory: ./server
         run: npm ci
-      
+
       - name: Wait for MongoDB
         run: |
           echo "Waiting for MongoDB to be ready..."
           sleep 10
-      
+
       - name: Run validation tests
         working-directory: ./server
         run: npm test -- __tests__/integration/quiz.integration.test.js
@@ -137,30 +137,30 @@ jobs:
       JWT_SECRET: test_secret_key_for_ci
       NODE_ENV: test
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
-      
+
       - name: Install server dependencies
         working-directory: ./server
         run: npm ci
-      
+
       - name: Wait for MongoDB
         run: |
           echo "Waiting for MongoDB to be ready..."
           sleep 10
-      
+
       - name: Run all tests
         working-directory: ./server
         run: npm test
         continue-on-error: true # NON CRITIQUE : Tolérance aux erreurs fonctionnelles
-      
+
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: server/coverage/
@@ -169,26 +169,26 @@ jobs:
   linting:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
-      
+
       - name: Install server dependencies
         working-directory: ./server
         run: npm ci
-      
+
       - name: Install client dependencies
         working-directory: ./client
         run: npm ci
-      
+
       - name: Run linter (server)
         working-directory: ./server
         run: npm run lint || echo "Linting completed with warnings"
         continue-on-error: true # NON CRITIQUE : Warnings ne bloquent pas le déploiement
-      
+
       - name: Run linter (client)
         working-directory: ./client
         run: npm run lint || echo "Linting completed with warnings"
