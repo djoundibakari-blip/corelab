@@ -90,7 +90,7 @@ const importQuiz = async (req, res) => {
 };
 
 // @desc    Get all attempts (admin gradebook)
-// @route   GET /api/attempts/admin
+// @route   GET /api/quiz-attempts/admin
 // @access  Private (admin)
 const getAllAttempts = async (req, res) => {
   try {
@@ -98,7 +98,37 @@ const getAllAttempts = async (req, res) => {
       .populate('userId', 'email name')
       .populate('quizId', 'lessonId passingScore')
       .sort({ submittedAt: -1 });
-    
+
+    res.json(attempts);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get authenticated user's own quiz grades
+// @route   GET /api/quiz-attempts/me
+// @access  Private (student)
+const getMyAttempts = async (req, res) => {
+  try {
+    const attempts = await Attempt.find({ userId: req.user.id })
+      .populate('quizId', 'lessonId passingScore')
+      .sort({ submittedAt: -1 });
+
+    res.json(attempts);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get all attempts for a specific quiz
+// @route   GET /api/quiz-attempts/quiz/:quizId
+// @access  Private (admin)
+const getAttemptsByQuiz = async (req, res) => {
+  try {
+    const attempts = await Attempt.find({ quizId: req.params.quizId })
+      .populate('userId', 'email name')
+      .sort({ submittedAt: -1 });
+
     res.json(attempts);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -109,5 +139,7 @@ module.exports = {
   getQuizByLessonId,
   submitQuiz,
   importQuiz,
-  getAllAttempts
+  getAllAttempts,
+  getMyAttempts,
+  getAttemptsByQuiz
 };
