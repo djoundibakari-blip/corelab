@@ -5,14 +5,23 @@ import {
   getQuizById,
   updateQuiz,
   deleteQuiz,
+  importStructuredQuiz,
 } from "../controllers/quiz.controller";
+
+// 🛡️ Vos vrais middlewares
+import { requireAuth } from "../middlewares/auth.middleware";
+import { requireRole } from "../middlewares/role.middleware";
 
 const router = Router();
 
-router.post("/", createQuiz);
+// On enchaîne requireAuth (pour décoder le token) puis requireRole (pour bloquer si pas admin)
+router.post("/", requireAuth, requireRole(["admin"]), createQuiz);
+router.post("/import", requireAuth, requireRole(["admin"]), importStructuredQuiz); 
+
 router.get("/", getQuizzes);
 router.get("/:id", getQuizById);
-router.put("/:id", updateQuiz);
-router.delete("/:id", deleteQuiz);
+
+router.put("/:id", requireAuth, requireRole(["admin"]), updateQuiz);
+router.delete("/:id", requireAuth, requireRole(["admin"]), deleteQuiz);
 
 export default router;

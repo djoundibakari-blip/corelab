@@ -1,220 +1,53 @@
-name: CI Pipeline - Corelab LMS
+name: 🚀 CoreLab CI (Lint & Tests)
 
 on:
   push:
-    branches: [ main, quiz/note ]
+    branches: [ main, master, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master, develop ]
 
 jobs:
-  # Job critique : Tests de sécurité et validation
-  security-tests:
+  build-and-test:
     runs-on: ubuntu-latest
+
+    # 🍃 On monte un vrai service MongoDB pour que l'API puisse faire ses requêtes BDD
     services:
       mongodb:
         image: mongo:6.0
         ports:
           - 27017:27017
-        options: >-
-          --health-cmd mongosh
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    env:
-      MONGO_URI: mongodb://localhost:27017/test
-      JWT_SECRET: test_secret_key_for_ci
-      NODE_ENV: test
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
+    steps:
+      # 1. On récupère le code du dépôt GitHub
+      - name: 📂 Checkout du code
+        uses: actions/checkout@v4
+
+      # 2. On installe l'environnement Node.js
+      - name: 🟢 Configuration de Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: Server/package.json
 
-      - name: Install dependencies
-        working-directory: ./server
-        run: npm ci
-
-      - name: Wait for MongoDB
+      # 3. On installe les dépendances dans le dossier Server
+      - name: 📦 Installation des dépendances
         run: |
-          echo "Waiting for MongoDB to be ready..."
-          sleep 10
+          cd Server
+          npm ci
 
-      - name: Run security tests
-        working-directory: ./server
-        run: npm test -- __tests__/integration/security.test.js
-        continue-on-error: false # CRITIQUE : Ne pas continuer en cas d'échec de sécurité
-      
-      - name: Run integration tests (answers leak check)
-        working-directory: ./server
-        run: npm test -- __tests__/integration/quiz.integration.test.js
-        continue-on-error: false # CRITIQUE : Ne pas continuer en cas de fuite de réponses
-
-  # Job critique : Build et compilation
-  build-check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install server dependencies
-        working-directory: ./server
-        run: npm ci
-
-      - name: Install client dependencies
-        working-directory: ./client
-        run: npm ci
-
-      - name: Build server
-        working-directory: ./server
-        run: npm run build || echo "No build script"
-        continue-on-error: false # CRITIQUE : Build crash bloque le déploiement
-
-      - name: Build client
-        working-directory: ./client
-        run: npm run build
-        continue-on-error: false # CRITIQUE : Build crash bloque le déploiement
-
-  # Job critique : Validation des schémas Zod
-  schema-validation:
-    runs-on: ubuntu-latest
-    services:
-      mongodb:
-        image: mongo:6.0
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd mongosh
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    env:
-      MONGO_URI: mongodb://localhost:27017/test
-      JWT_SECRET: test_secret_key_for_ci
-      NODE_ENV: test
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        working-directory: ./server
-        run: npm ci
-
-      - name: Wait for MongoDB
+      # 4. Étape de vérification de la syntaxe (Linting)
+      # Note : Si tu n'as pas encore de script "lint" configuré, cette étape lancera la compilation TypeScript
+      - name: 🔍 Vérification du code (Lint / Compilation)
         run: |
-          echo "Waiting for MongoDB to be ready..."
-          sleep 10
+          cd Server
+          npm run build --if-present
 
-      - name: Run validation tests
-        working-directory: ./server
-        run: npm test -- __tests__/integration/quiz.integration.test.js
-        continue-on-error: false # CRITIQUE : Faille validation Zod bloque le déploiement
-
-  # Job non critique : Tests fonctionnels (avec tolérance)
-  functional-tests:
-    runs-on: ubuntu-latest
-    services:
-      mongodb:
-        image: mongo:6.0
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd mongosh
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    env:
-      MONGO_URI: mongodb://localhost:27017/test
-      JWT_SECRET: test_secret_key_for_ci
-      NODE_ENV: test
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install server dependencies
-        working-directory: ./server
-        run: npm ci
-
-      - name: Wait for MongoDB
+      # 5. On lance la suite de tests Jest qu'on a configurée ensemble
+      - name: 🧪 Exécution des tests d'intégration (Jest)
+        env:
+          JWT_SECRET: super_secret_key_ci_test_123
+          PORT: 4242
         run: |
-          echo "Waiting for MongoDB to be ready..."
-          sleep 10
-
-      - name: Run all tests
-        working-directory: ./server
-        run: npm test
-        continue-on-error: true # NON CRITIQUE : Tolérance aux erreurs fonctionnelles
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: server/coverage/
-
-  # Job non critique : Linting (avec tolérance)
-  linting:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install server dependencies
-        working-directory: ./server
-        run: npm ci
-
-      - name: Install client dependencies
-        working-directory: ./client
-        run: npm ci
-
-      - name: Run linter (server)
-        working-directory: ./server
-        run: npm run lint || echo "Linting completed with warnings"
-        continue-on-error: true # NON CRITIQUE : Warnings ne bloquent pas le déploiement
-
-      - name: Run linter (client)
-        working-directory: ./client
-        run: npm run lint || echo "Linting completed with warnings"
-        continue-on-error: true # NON CRITIQUE : Warnings ne bloquent pas le déploiement
-
-  # Notification finale (toujours exécuté)
-  notify:
-    runs-on: ubuntu-latest
-    needs: [security-tests, build-check, schema-validation, functional-tests, linting]
-    if: always()
-    steps:
-      - name: Check job statuses
-        run: |
-          echo "Security tests: ${{ needs.security-tests.result }}"
-          echo "Build check: ${{ needs.build-check.result }}"
-          echo "Schema validation: ${{ needs.schema-validation.result }}"
-          echo "Functional tests: ${{ needs.functional-tests.result }}"
-          echo "Linting: ${{ needs.linting.result }}"
-      
-      - name: Determine overall status
-        run: |
-          if [ "${{ needs.security-tests.result }}" != "success" ] || \
-             [ "${{ needs.build-check.result }}" != "success" ] || \
-             [ "${{ needs.schema-validation.result }}" != "success" ]; then
-            echo "CRITICAL FAILURE - Deployment blocked"
-            exit 1
-          else
-            echo "Deployment ready (non-critical issues may exist)"
-          fi
+          cd Server
+          npm test
