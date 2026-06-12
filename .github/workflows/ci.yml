@@ -1,4 +1,4 @@
-name: 🚀 CoreLab CI (Lint & Tests)
+name:  CoreLab CI (Lint & Tests)
 
 on:
   push:
@@ -10,7 +10,6 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    # 🍃 On monte un vrai service MongoDB pour que l'API puisse faire ses requêtes BDD
     services:
       mongodb:
         image: mongo:6.0
@@ -19,32 +18,31 @@ jobs:
 
     steps:
       # 1. On récupère le code du dépôt GitHub
-      - name: 📂 Checkout du code
+      - name:  Checkout du code
         uses: actions/checkout@v4
 
       # 2. On installe l'environnement Node.js
-      - name: 🟢 Configuration de Node.js
+      - name:  Configuration de Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: 'npm'
           cache-dependency-path: Server/package.json
 
-      # 3. On installe les dépendances dans le dossier Server
-      - name: 📦 Installation des dépendances
+      # 3 On installe les dépendances dans le dossier Server
+      - name:  Installation des dépendances
         run: |
           cd Server
           npm ci
 
-      # 4. Étape de vérification de la syntaxe (Linting)
-      # Note : Si tu n'as pas encore de script "lint" configuré, cette étape lancera la compilation TypeScript
-      - name: 🔍 Vérification du code (Lint / Compilation)
+        # Étape de vérification de la syntaxe (Lint) et de compilation
+      - name:  Vérification du code (Lint / Compilation)
         run: |
           cd Server
           npm run build --if-present
 
-      # 5. On lance la suite de tests Jest qu'on a configurée ensemble
-      - name: 🧪 Exécution des tests d'intégration (Jest)
+      #  On lance la suite de tests Jest qu'on a configurée 
+      - name:  Exécution des tests d'intégration (Jest)
         env:
           JWT_SECRET: super_secret_key_ci_test_123
           PORT: 4242
