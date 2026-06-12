@@ -1,10 +1,34 @@
 import { Schema, model, Document } from "mongoose";
 
+export interface IQuestion {
+  questionText: string;
+  propositions: string[];
+  correctAnswer: string;
+}
+
 export interface IQuiz extends Document {
   title: string;
-  questions: string[];
+  questions: IQuestion[];
   course: Schema.Types.ObjectId;
 }
+
+const questionSchema = new Schema<IQuestion>(
+  {
+    questionText: {
+      type: String,
+      required: true,
+    },
+    propositions: {
+      type: [String],
+      required: true,
+    },
+    correctAnswer: {
+      type: String,
+      required: true,
+    },
+  },
+  { _id: false }
+);
 
 const quizSchema = new Schema<IQuiz>(
   {
@@ -14,7 +38,7 @@ const quizSchema = new Schema<IQuiz>(
       trim: true,
     },
     questions: {
-      type: [String],
+      type: [questionSchema],
       required: true,
     },
     course: {

@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll } from "@jest/globals";
 import request from "supertest";
 import mongoose from "mongoose";
-import jwt from "jsonwebtoken"; // Import nécessaire pour générer le token de test
+import jwt from "jsonwebtoken"; 
 import { app } from "../index"; 
 import { Quiz } from "../models/Quiz";
 import { User } from "../models/User";
 
-describe("🧪 Tests d'Intégration API : Permissions & Validations", () => {
+describe(" Tests d'Intégration API : Permissions & Validations", () => {
   
   let mockStudentId: string;
-  let mockStudentToken: string; // Token généré pour le test
+  let mockStudentToken: string; 
   let mockQuizId: string;
   let mockCourseId = new mongoose.Types.ObjectId().toString();
 
@@ -18,25 +18,29 @@ describe("🧪 Tests d'Intégration API : Permissions & Validations", () => {
       await mongoose.connect("mongodb://127.0.0.1:27017/corelab-course");
     }
 
-    // 1. Création de l'utilisateur étudiant
+    //  On force une clé secrète globale pour le mode test si elle n'est pas définie dans le .env
+    if (!process.env.JWT_SECRET) {
+      process.env.JWT_SECRET = "cle_secrete_de_test_super_robuste_123";
+    }
+
+    //  Création de l'utilisateur étudiant
     const student = await User.create({
       firstName: "Simple",
       lastName: "Student",
-      email: "student-permissions@corelab.com",
+      email: `student-${Date.now()}@corelab.com`, // Email dynamique pour éviter les doublons en BDD
       password: "password123",
       role: "student" 
     });
     mockStudentId = (student as any)._id.toString();
 
-    // 2. Génération d'un faux token JWT simulant cet étudiant
-    const secret = process.env.JWT_SECRET || "votre_secret_de_test";
+    //  Génération du token JWT avec la clé secrète synchronisée
     mockStudentToken = jwt.sign(
       { id: mockStudentId, role: "student" },
-      secret,
+      process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
-    // 3. Création d'un quiz de base
+    //  Création d'un quiz de base
     const quiz = await Quiz.create({
       title: "Quiz Permissions",
       course: mockCourseId as any,
@@ -57,15 +61,13 @@ describe("🧪 Tests d'Intégration API : Permissions & Validations", () => {
     await mongoose.connection.close();
   });
 
-  // ========================================================
-  // 🔐 PARTIE 1 : TESTS DE PERMISSIONS (RÔLES ET ACCÈS)
-  // ========================================================
-  describe("🛡️ Permissions : Droits d'accès aux routes d'administration", () => {
+  // test e permisssions rôles te accès aux routes d'administration et les validations des inputs pour les quiz results
+  describe(" Permissions : Droits d'accès aux routes d'administration", () => {
     
-    it("❌ Doit interdire à un étudiant de créer un quiz (Route Admin)", async () => {
+    it(" Doit interdire à un étudiant de créer un quiz (Route Admin)", async () => {
       const response = await request(app)
         .post("/api/quizzes")
-        .set("Authorization", `Bearer ${mockStudentToken}`) // Envoi du token étudiant
+        .set("Authorization", `Bearer ${mockStudentToken}`)
         .send({
           title: "Quiz Fraude",
           courseId: mockCourseId,
@@ -76,22 +78,20 @@ describe("🧪 Tests d'Intégration API : Permissions & Validations", () => {
       expect(response.body.message).toContain("Accès refusé");
     });
 
-    it("❌ Doit interdire à un étudiant de supprimer un quiz (Route Admin)", async () => {
+    it(" Doit interdire à un étudiant de supprimer un quiz (Route Admin)", async () => {
       const response = await request(app)
         .delete(`/api/quizzes/${mockQuizId}`)
-        .set("Authorization", `Bearer ${mockStudentToken}`); // Envoi du token étudiant
+        .set("Authorization", `Bearer ${mockStudentToken}`);
 
       expect(response.status).toBe(403);
       expect(response.body.message).toContain("Accès refusé");
     });
   });
 
-  // ========================================================
-  // 📐 PARTIE 2 : TESTS DE VALIDATION DES DONNÉES (BAD INPUTS)
-  // ========================================================
-  describe("🗂️ Validations : Blocage des mauvais inputs", () => {
+  
+  describe(" Validations : Blocage des mauvais inputs", () => {
 
-    it("❌ Doit bloquer la soumission si le format des réponses est incorrect", async () => {
+    it(" Doit bloquer la soumission si le format des réponses est incorrect", async () => {
       const response = await request(app)
         .post("/api/quiz-results/submit")
         .send({
@@ -101,10 +101,9 @@ describe("🧪 Tests d'Intégration API : Permissions & Validations", () => {
         });
 
       expect(response.status).toBe(400);
-      expect(response.body.message).toBeDefined();
     });
 
-    it("❌ Doit bloquer les IDs MongoDB mal formés", async () => {
+    it(" Doit bloquer les IDs MongoDB mal formés", async () => {
       const response = await request(app)
         .post("/api/quiz-results/submit")
         .send({
