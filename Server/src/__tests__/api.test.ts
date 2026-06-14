@@ -6,7 +6,7 @@ import { app } from "../index";
 import { Quiz } from "../models/Quiz";
 import { User } from "../models/User";
 
-describe(" Tests d'Intégration API : Permissions & Validations", () => {
+describe("API - Permissions et Validations", () => {
   
   let mockStudentId: string;
   let mockStudentToken: string; 
@@ -61,10 +61,9 @@ describe(" Tests d'Intégration API : Permissions & Validations", () => {
     await mongoose.connection.close();
   });
 
-  // test e permisssions rôles te accès aux routes d'administration et les validations des inputs pour les quiz results
-  describe(" Permissions : Droits d'accès aux routes d'administration", () => {
-    
-    it(" Doit interdire à un étudiant de créer un quiz (Route Admin)", async () => {
+  describe("Permissions", () => {
+
+    it("un étudiant ne peut pas créer un quiz", async () => {
       const response = await request(app)
         .post("/api/quizzes")
         .set("Authorization", `Bearer ${mockStudentToken}`)
@@ -78,7 +77,7 @@ describe(" Tests d'Intégration API : Permissions & Validations", () => {
       expect(response.body.message).toContain("Accès refusé");
     });
 
-    it(" Doit interdire à un étudiant de supprimer un quiz (Route Admin)", async () => {
+    it("un étudiant ne peut pas supprimer un quiz", async () => {
       const response = await request(app)
         .delete(`/api/quizzes/${mockQuizId}`)
         .set("Authorization", `Bearer ${mockStudentToken}`);
@@ -89,9 +88,9 @@ describe(" Tests d'Intégration API : Permissions & Validations", () => {
   });
 
   
-  describe(" Validations : Blocage des mauvais inputs", () => {
+  describe("Validations", () => {
 
-    it(" Doit bloquer la soumission si le format des réponses est incorrect", async () => {
+    it("rejette les réponses qui ne sont pas un tableau", async () => {
       const response = await request(app)
         .post("/api/quiz-results/submit")
         .send({
@@ -103,7 +102,7 @@ describe(" Tests d'Intégration API : Permissions & Validations", () => {
       expect(response.status).toBe(400);
     });
 
-    it(" Doit bloquer les IDs MongoDB mal formés", async () => {
+    it("rejette un studentId invalide", async () => {
       const response = await request(app)
         .post("/api/quiz-results/submit")
         .send({
