@@ -27,13 +27,12 @@ jobs:
         with:
           node-version: 18
           cache: 'npm'
-          cache-dependency-path: Server/package.json
+          cache-dependency-path: Server/package-lock.json
 
-      # 3 On installe les dépendances dans le dossier Server
       - name:  Installation des dépendances
         run: |
           cd Server
-          npm ci
+          npm install
 
         # Étape de vérification de la syntaxe (Lint) et de compilation
       - name:  Vérification du code (Lint / Compilation)
