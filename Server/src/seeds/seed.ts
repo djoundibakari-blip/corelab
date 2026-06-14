@@ -1,83 +1,148 @@
 import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+import fs from "fs";
+import path from "path";
+import csv from "csv-parser";
 import { User } from "../models/User";
+import { Course } from "../models/Course";
+import { Lesson } from "../models/Lesson";
 import { Quiz } from "../models/Quiz";
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/corelab-course";
 
+interface CSVUser {
+  firstName: string;
+  lastName: string;
+  role: "admin" | "student";
+}
+
 async function seedDatabase() {
   try {
-    console.log(" Connexion à la base de données pour le seeding...");
+    console.log(" 🔌 Connexion à la base de données...");
     await mongoose.connect(MONGO_URI);
 
-    console.log(" Nettoyage de la base de données (Users & Quizzes)...");
+    console.log(" 🧹 Nettoyage complet de la base de données...");
     await User.deleteMany({});
+    await Course.deleteMany({});
+    await Lesson.deleteMany({});
     await Quiz.deleteMany({});
 
-    console.log(" Chiffrement du mot de passe global ('123456')...");
-    const hashedPassword = await bcrypt.hash("123456", 10);
+    // 1. IMPORTATION DES UTILISATEURS DU CSV
+    const usersFromCSV: CSVUser[] = [];
+    const csvFilePath = path.resolve(__dirname, "../../user.csv");
 
-    // 👥 Liste exacte des étudiants et admins de la  base de données
-    const usersData = [
-      { firstName: "Euphrasy", lastName: "Meyo", email: "euphrasy.meyo@test.com", role: "admin" },
-      { firstName: "Djoundi", lastName: "Bakari", email: "djoundi.bakari@test.com", role: "admin" },
-      { firstName: "Florian", lastName: "Grima", email: "florian.grima@test.com", role: "student" },
-      { firstName: "Salma", lastName: "Naji", email: "salma.naji@test.com", role: "student" },
-      { firstName: "Guillaume", lastName: "Soisson", email: "guillaume.soisson@test.com", role: "student" },
-      { firstName: "Pauline", lastName: "Bouabssa", email: "pauline.bouabssa@test.com", role: "student" },
-      { firstName: "Naïm", lastName: "Bilounga", email: "naim.bilounga@test.com", role: "student" },
-      { firstName: "Fai", lastName: "Collins", email: "fai.collins@test.com", role: "student" },
-      { firstName: "Pablo", lastName: "Moreno", email: "pablo.moreno@test.com", role: "student" },
-      { firstName: "Alicia", lastName: "Kant", email: "alicia.kant@test.com", role: "student" },
-      { firstName: "Eve", lastName: "Hotz", email: "eve.hotz@test.com", role: "student" },
-      { firstName: "Dimitri", lastName: "Payet", email: "dimitri.paillet@test.com", role: "student" },
-      { firstName: "Olivia", lastName: "Yace", email: "olivia.yace@test.com", role: "student" },
-      { firstName: "Gabriel", lastName: "Prost", email: "gabriel.prost@test.com", role: "student" }
-    ];
+    if (!fs.existsSync(csvFilePath)) {
+      throw new Error(`Le fichier user.csv est introuvable : ${csvFilePath}`);
+    }
 
-    console.log(` Insertion des ${usersData.length} utilisateurs dans MongoDB...`);
-    for (const u of usersData) {
+    await new Promise<void>((resolve, reject) => {
+      fs.createReadStream(csvFilePath)
+        .pipe(csv({
+          headers: ['firstName', 'lastName', 'role'],
+          skipLines: 0,
+          mapHeaders: ({ header }) => header.trim()
+        }))
+        .on("data", (data) => {
+          if (data.firstName && data.firstName.trim() !== "firstName") {
+            usersFromCSV.push(data);
+          }
+        })
+        .on("end", () => resolve())
+        .on("error", (error) => reject(error));
+    });
+
+    console.log(` 📂 Injection de ${usersFromCSV.length} utilisateurs...`);
+    for (const u of usersFromCSV) {
+      const cleanFirstName = u.firstName.trim().toLowerCase().replace(/\s+/g, "");
+      const cleanLastName = u.lastName.trim().toLowerCase().replace(/\s+/g, "");
+      const generatedEmail = `${cleanFirstName}.${cleanLastName}@corelab.com`;
+      const uniquePassword = `${cleanLastName}123!`;
+
       await User.create({
-        firstName: u.firstName,
-        lastName: u.lastName,
-        email: u.email,
-        password: hashedPassword,
-        role: u.role
+        firstName: u.firstName.trim(),
+        lastName: u.lastName.trim(),
+        email: generatedEmail,
+        password: uniquePassword, 
+        role: u.role.trim() as any
       });
     }
 
-    // 📚 Création d'un ID de cours factif pour lier le quiz
-    const mockCourseId = new mongoose.Types.ObjectId();
-
-    console.log(" Insertion d'un quiz de démonstration CoreLab...");
-    await Quiz.create({
-      title: "Quiz d'Évaluation TypeScript & Sécurité",
-      course: mockCourseId as any,
-      questions: [
-        {
-          questionText: "Quel composant gère le filtrage et la validation des rôles d'accès (Admin/Student) ?",
-          propositions: ["Le modèle Mongoose", "Le middleware Express", "Le validateur de schéma Zod", "Le script de compilation"],
-          correctAnswer: "Le middleware Express"
-        },
-        {
-          questionText: "Quelle bibliothèque permet de hacher de manière sécurisée les mots de passe avant l'insertion en BDD ?",
-          propositions: ["Jsonwebtoken", "Bcrypt", "Mongoose", "Dotenv"],
-          correctAnswer: "Bcrypt"
-        }
-      ]
+    // 2. CRÉATION DES COURS (Avec le champ category désormais !)
+    console.log(" 📚 Création des cours...");
+    
+    const courseBackend = await Course.create({
+      title: "Développement Backend avec Node.js & Express",
+      description: "Devenez autonome sur la création d'API REST robustes et sécurisées.",
+      duration: "12 heures",
+      level: "Intermédiaire",
+      category: "Backend" // <--- Corrigé ici !
     });
 
-    console.log("\n Base de données seedée avec succès !");
-    console.log("---------------------------------------------------------");
-    console.log(` Identifiants : Utilisez l'un des emails ci-dessus`);
-    console.log(` Mot de passe unique pour tous : 123456`);
-    console.log("---------------------------------------------------------\n");
+    const courseArchitecture = await Course.create({
+      title: "Architecture des Applications Modernes",
+      description: "Comprenez comment structurer un projet professionnel et gérer la sécurité de vos données.",
+      duration: "8 heures",
+      level: "Avancé",
+      category: "Architecture" // <--- Corrigé ici !
+    });
+
+    // 3. CRÉATION DES LEÇONS
+    console.log(" 📖 Création des leçons...");
+
+    await Lesson.create([
+      {
+        title: "Introduction aux architectures REST",
+        content: "Dans cette leçon, nous allons voir comment fonctionnent les verbes HTTP (GET, POST, PUT, DELETE) et les codes de statut.",
+        course: courseBackend._id,
+        order: 1
+      },
+      {
+        title: "Configuration d'Express et connexion MongoDB",
+        content: "Découvrez comment initialiser un serveur Express stable et utiliser Mongoose pour manipuler votre base de données locale.",
+        course: courseBackend._id,
+        order: 2
+      },
+      {
+        title: "Hachage des mots de passe avec Bcrypt",
+        content: "Sécurisez vos données utilisateurs en mettant en place un système de hachage robuste grâce aux hooks pré-save de Mongoose.",
+        course: courseArchitecture._id,
+        order: 1
+      }
+    ]);
+
+    // 4. CRÉATION DES QUIZ
+    console.log(" 📝 Création des quiz d'évaluation...");
+
+    await Quiz.create([
+      {
+        title: "Quiz : Validation des acquis Node.js",
+        course: courseBackend._id,
+        questions: [
+          {
+            questionText: "Quel middleware Express permet de décoder le JSON reçu dans le corps des requêtes ?",
+            propositions: ["express.static()", "express.json()", "cors()", "dotenv"],
+            correctAnswer: "express.json()"
+          }
+        ]
+      },
+      {
+        title: "Quiz : Sécurité & Hachage",
+        course: courseArchitecture._id,
+        questions: [
+          {
+            questionText: "Pourquoi ne faut-il jamais stocker un mot de passe en clair dans une base de données ?",
+            propositions: ["Parce que ça prend trop de place", "Pour éviter qu'un pirate informatique ne les lise en cas de fuite de données", "Parce que MongoDB refuse le texte simple", "Pour ralentir le serveur"],
+            correctAnswer: "Pour éviter qu'un pirate informatique ne les lise en cas de fuite de données"
+          }
+        ]
+      }
+    ]);
+
+    console.log(" 🎉 Base de données magnifiquement peuplée !");
 
   } catch (error) {
-    console.error(" Erreur pendant le processus de seeding :", error);
+    console.error(" ❌ Erreur pendant le seeding :", error);
   } finally {
     await mongoose.connection.close();
-    console.log(" Connexion MongoDB fermée proprement.");
     process.exit(0);
   }
 }

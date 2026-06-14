@@ -1,4 +1,6 @@
 export interface User {
+  _id?: string; // Ajouté pour correspondre à MongoDB
+  id?: string;  // Sécurité alternative
   userId: string;
   email: string;
   role: 'student' | 'admin';
@@ -22,23 +24,27 @@ export interface Quiz {
   passingScore: number;
 }
 
-// `correct` intentionally absent — les bonnes réponses ne transitent jamais vers le client
+// Correction ici : acceptation des différentes variantes de clés utilisées dans les composants
 export interface QuizQuestion {
-  question: string;
+  id?: number | string;
+  question?: string;
+  questionText?: string; // Utilisé dans QuizPage.jsx
+  text?: string;         // Utilisé dans QuizViewsV0.jsx
   options: string[];
 }
 
-// Shape exacte retournée par POST /api/quizzes/:id/submit
+// Shape exacte retournée par ton contrôleur backend
 export interface QuizSubmitResult {
   score: number;
   passed: boolean;
-  correctAnswers: boolean[];
+  correctAnswers?: boolean[];
 }
 
 export interface QuizAttempt {
   _id: string;
   userId: { _id: string; email: string };
-  quizId: { _id: string; lessonId: string; passingScore?: number };
+  // Assouplissement ici pour accepter soit l'objet peuplé, soit une string brute du backend
+  quizId: string | { _id: string; lessonId: string; title?: string; passingScore?: number };
   score: number;
   passed: boolean;
   submittedAt: string;

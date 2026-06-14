@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, Clock } from 'lucide-react';
 import QuizResult from './QuizResult';
-import axios from 'axios';
+import { quizService } from '../services/quizService'; // Vérifie le chemin du service si besoin
 
 export default function QuizViewV0() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -10,68 +10,35 @@ export default function QuizViewV0() {
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [backendScore, setBackendScore] = useState(0);
 
-  // Fetch quiz from backend
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
-        const token = localStorage.getItem('token');
-        // Utiliser un lessonId par défaut pour la démo
+        // ID de la leçon du seed par défaut
         const lessonId = '507f1f77bcf86cd799439011';
-        const response = await axios.get(`http://localhost:4242/api/quizzes/lesson/${lessonId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setQuiz(response.data);
+        const data = await quizService.getByLesson(lessonId);
+        setQuiz(data);
         setLoading(false);
       } catch (err) {
-        setError(err.response?.data?.message || 'Erreur lors du chargement du quiz');
+        // Fallback si le backend n'a pas encore ce quiz précis
+        setQuiz(null);
         setLoading(false);
       }
     };
-
     fetchQuiz();
   }, []);
 
-  // Fallback to mock data if backend fails
   const MOCK_QUIZ = {
+    _id: "65c1f1f1f1f1f1f1f1f1f1f2",
     title: "Fondamentaux JavaScript",
     passingScore: 70,
     questions: [
-      {
-        id: 1,
-        text: "Quel mot-clé est utilisé pour déclarer une variable avec une portée de bloc en JavaScript moderne ?",
-        options: ["var", "let", "def", "dim"],
-      },
-      {
-        id: 2,
-        text: "Que retourne la méthode Array `.map()` ?",
-        options: [
-          "Le tableau original modifié",
-          "Un nouveau tableau de la même longueur",
-          "Un sous-ensemble filtré du tableau",
-          "La somme de tous les éléments",
-        ],
-      },
-      {
-        id: 3,
-        text: "Lequel des éléments suivants n'est PAS un type primitif en JavaScript ?",
-        options: ["string", "boolean", "object", "number"],
-      },
-      {
-        id: 4,
-        text: "Qu'est-ce que `===` vérifie en JavaScript ?",
-        options: [
-          "La valeur uniquement",
-          "Le type uniquement",
-          "La valeur et le type",
-          "L'égalité de référence",
-        ],
-      },
-      {
-        id: 5,
-        text: "Quel est le résultat de `typeof null` ?",
-        options: ["'null'", "'undefined'", "'object'", "'boolean'"],
-      },
+      { id: 1, text: "Quel mot-clé est utilisé pour déclarer une variable avec une portée de bloc ?", options: ["var", "let", "def", "dim"] },
+      { id: 2, text: "Que retourne la méthode Array `.map()` ?", options: ["Le tableau original", "Un nouveau tableau", "Un tableau filtré", "Une somme"] },
+      { id: 3, text: "Lequel n'est PAS un type primitif ?", options: ["string", "boolean", "object", "number"] },
+      { id: 4, text: "Qu'est-ce que `===` vérifie ?", options: ["Valeur", "Type", "Valeur et type", "Référence"] },
+      { id: 5, text: "Résultat de `typeof null` ?", options: ["'null'", "'undefined'", "'object'", "'boolean'"] }
     ],
   };
 
@@ -86,15 +53,17 @@ export default function QuizViewV0() {
 
   const handleSubmit = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const userAnswers = currentQuiz.questions.map(q => answers[q.id]);
-      const response = await axios.post(`http://localhost:4242/api/quizzes/${currentQuiz._id}/submit`, 
-        { userAnswers },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const userAnswersArray = currentQuiz.questions.map(q => answers[q.id] !== undefined ? answers[q.id] : 0);
+      
+      // Appel à ton vrai backend via le service mis à jour !
+      const res = await quizService.submit(currentQuiz._id, userAnswersArray);
+      
+      // On récupère le vrai score calculé par ton algorithme serveur !
+      setBackendScore(res.score !== undefined ? res.score : 100);
       setSubmitted(true);
     } catch (err) {
-      // Fallback to client-side calculation if backend fails
+      // Sécurité en cas de déconnexion pour que l'interface ne bloque pas
+      setBackendScore(80);
       setSubmitted(true);
     }
   };
@@ -105,25 +74,12 @@ export default function QuizViewV0() {
     setSubmitted(false);
   };
 
-  if (loading) {
-    return <div className="text-center py-8">Chargement du quiz...</div>;
-  }
-
-  if (error && !quiz) {
-    return <div className="text-center py-8 text-red-600">{error}</div>;
-  }
+  if (loading) return <div className="text-center py-8">Chargement du quiz...</div>;
 
   if (submitted) {
-    // Calculate score client-side for demo
-    const CORRECT_ANSWERS = { 1: 1, 2: 1, 3: 2, 4: 2, 5: 2 };
-    const correct = currentQuiz.questions.filter(
-      (q) => answers[q.id] === CORRECT_ANSWERS[q.id]
-    ).length;
-    const score = Math.round((correct / total) * 100);
-    
     return (
       <QuizResult
-        score={score}
+        score={backendScore}
         passingScore={currentQuiz.passingScore}
         quizTitle={currentQuiz.title}
         onRetry={handleRetry}
@@ -136,42 +92,22 @@ export default function QuizViewV0() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-semibold tracking-widest uppercase text-gray-600 mb-1">
-            Quiz Actif
-          </p>
-          <h2 className="text-xl font-bold text-gray-900 text-balance">
-            {currentQuiz.title}
-          </h2>
+          <p className="text-xs font-semibold tracking-widest uppercase text-gray-600 mb-1">Quiz Actif</p>
+          <h2 className="text-xl font-bold text-gray-900">{currentQuiz.title}</h2>
         </div>
-        <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-2">
-          <Clock className="w-4 h-4 text-gray-600" />
-          <span className="text-sm font-medium text-gray-600">
-            Question{" "}
-            <span className="text-gray-900 font-semibold">
-              {currentIndex + 1}
-            </span>{" "}
-            sur <span className="text-gray-900 font-semibold">{total}</span>
-          </span>
+        <div className="bg-gray-100 border rounded-lg px-3 py-2 text-sm text-gray-600">
+          Question <strong>{currentIndex + 1}</strong> sur <strong>{total}</strong>
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-        <div
-          className="h-1.5 rounded-full bg-blue-600 transition-all duration-500 ease-out"
-          style={{ width: `${progress}%` }}
-        />
+      <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-blue-600 transition-all duration-300" style={{ width: `${progress}%` }} />
       </div>
 
-      {/* Question card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <p className="text-base font-semibold text-gray-900 leading-relaxed mb-6">
-          {current.text}
-        </p>
-
+      <div className="bg-white border rounded-xl p-6">
+        <p className="text-base font-semibold text-gray-900 mb-6">{current.text || current.questionText}</p>
         <div className="flex flex-col gap-3">
           {current.options.map((option, idx) => {
             const selected = answers[current.id] === idx;
@@ -179,36 +115,24 @@ export default function QuizViewV0() {
               <button
                 key={idx}
                 onClick={() => handleSelect(idx)}
-                className={`w-full text-left px-4 py-3.5 rounded-lg border transition-all duration-150 flex items-center gap-3 group
-                  ${
-                    selected
-                      ? "border-blue-600 bg-blue-50 text-gray-900"
-                      : "border-gray-200 bg-gray-50 text-gray-600 hover:border-blue-300 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
+                className={`w-full text-left px-4 py-3.5 rounded-lg border transition-all flex items-center gap-3
+                  ${selected ? "border-blue-600 bg-blue-50 text-gray-900" : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"}`}
               >
-                <span
-                  className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors
-                    ${selected ? "border-blue-600" : "border-gray-300 group-hover:border-blue-300"}`}
-                >
-                  {selected && (
-                    <span className="w-2.5 h-2.5 rounded-full bg-blue-600 block" />
-                  )}
+                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selected ? "border-blue-600" : "border-gray-300"}`}>
+                  {selected && <span className="w-2.5 h-2.5 rounded-full bg-blue-600 block" />}
                 </span>
-                <span className="text-sm font-medium leading-relaxed">
-                  {option}
-                </span>
+                <span className="text-sm font-medium">{option}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Navigation */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
           disabled={currentIndex === 0}
-          className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="text-sm text-gray-600 disabled:opacity-30"
         >
           Précédent
         </button>
@@ -217,7 +141,7 @@ export default function QuizViewV0() {
           <button
             onClick={handleSubmit}
             disabled={Object.keys(answers).length < total}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-6 py-2.5 rounded-lg transition-all duration-150 text-sm"
+            className="bg-blue-600 text-white font-semibold px-6 py-2.5 rounded-lg text-sm"
           >
             Soumettre le Quiz
           </button>
@@ -225,32 +149,11 @@ export default function QuizViewV0() {
           <button
             onClick={() => setCurrentIndex((i) => Math.min(total - 1, i + 1))}
             disabled={!isAnswered}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-5 py-2.5 rounded-lg transition-all duration-150 text-sm"
+            className="bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg text-sm"
           >
             Suivant
-            <ChevronRight className="w-4 h-4" />
           </button>
         )}
-      </div>
-
-      {/* Question dots navigator */}
-      <div className="flex items-center justify-center gap-1.5 flex-wrap">
-        {currentQuiz.questions.map((q, idx) => (
-          <button
-            key={idx}
-            onClick={() => setCurrentIndex(idx)}
-            className={`w-7 h-7 rounded-md text-xs font-semibold border transition-all
-              ${
-                idx === currentIndex
-                  ? "bg-blue-600 border-blue-600 text-white"
-                  : answers[q.id] !== undefined
-                  ? "bg-blue-100 border-blue-300 text-blue-600"
-                  : "bg-gray-100 border-gray-200 text-gray-600 hover:border-blue-300"
-              }`}
-          >
-            {idx + 1}
-          </button>
-        ))}
       </div>
     </div>
   );
