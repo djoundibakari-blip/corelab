@@ -8,7 +8,7 @@ import {
   importStructuredQuiz,
 } from "../controllers/quiz.controller";
 
-// 🛡️ Vos vrais middlewares
+// middlewares
 import { requireAuth } from "../middlewares/auth.middleware";
 import { requireRole } from "../middlewares/role.middleware";
 

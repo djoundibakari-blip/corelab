@@ -26,7 +26,7 @@ async function seedDatabase() {
     await Lesson.deleteMany({});
     await Quiz.deleteMany({});
 
-    // 1. IMPORTATION DES UTILISATEURS DU CSV
+    //  IMPORTATION DES UTILISATEURS DU CSV
     const usersFromCSV: CSVUser[] = [];
     const csvFilePath = path.resolve(__dirname, "../../user.csv");
 
@@ -50,7 +50,7 @@ async function seedDatabase() {
         .on("error", (error) => reject(error));
     });
 
-    console.log(` 📂 Injection de ${usersFromCSV.length} utilisateurs...`);
+    console.log(`  Injection de ${usersFromCSV.length} utilisateurs...`);
     for (const u of usersFromCSV) {
       const cleanFirstName = u.firstName.trim().toLowerCase().replace(/\s+/g, "");
       const cleanLastName = u.lastName.trim().toLowerCase().replace(/\s+/g, "");
@@ -66,15 +66,15 @@ async function seedDatabase() {
       });
     }
 
-    // 2. CRÉATION DES COURS (Avec le champ category désormais !)
-    console.log(" 📚 Création des cours...");
+    //  CRÉATION DES COURS (Avec le champ category désormais !)
+    console.log("  Création des cours...");
     
     const courseBackend = await Course.create({
       title: "Développement Backend avec Node.js & Express",
       description: "Devenez autonome sur la création d'API REST robustes et sécurisées.",
       duration: "12 heures",
       level: "Intermédiaire",
-      category: "Backend" // <--- Corrigé ici !
+      category: "Backend" 
     });
 
     const courseArchitecture = await Course.create({
@@ -82,11 +82,11 @@ async function seedDatabase() {
       description: "Comprenez comment structurer un projet professionnel et gérer la sécurité de vos données.",
       duration: "8 heures",
       level: "Avancé",
-      category: "Architecture" // <--- Corrigé ici !
+      category: "Architecture"  
     });
 
-    // 3. CRÉATION DES LEÇONS
-    console.log(" 📖 Création des leçons...");
+    // CRÉATION DES LEÇONS
+    console.log("  Création des leçons...");
 
     await Lesson.create([
       {
@@ -109,8 +109,8 @@ async function seedDatabase() {
       }
     ]);
 
-    // 4. CRÉATION DES QUIZ
-    console.log(" 📝 Création des quiz d'évaluation...");
+    //  CRÉATION DES QUIZ
+    console.log("  Création des quiz d'évaluation...");
 
     await Quiz.create([
       {
@@ -137,10 +137,10 @@ async function seedDatabase() {
       }
     ]);
 
-    console.log(" 🎉 Base de données magnifiquement peuplée !");
+    console.log("  Base de données magnifiquement peuplée !");
 
   } catch (error) {
-    console.error(" ❌ Erreur pendant le seeding :", error);
+    console.error("  Erreur pendant le seeding :", error);
   } finally {
     await mongoose.connection.close();
     process.exit(0);

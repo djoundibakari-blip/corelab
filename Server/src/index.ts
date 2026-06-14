@@ -12,17 +12,16 @@ import userRoutes from "./routes/user.routes";
 import quizResultRoutes from "./routes/quizResult.routes";
 import notificationRoutes from "./routes/notification.routes";
 
-// Import direct des modèles pour nos intercepteurs de secours
 import { Course } from "./models/Course";
 import { Lesson } from "./models/Lesson";
 import { Quiz } from "./models/Quiz";
 
-// Configuration robuste pour pointer directement sur le .env du dossier Server
+//  pointer directement sur le .env du dossier Server
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 export const app: Express = express();
 
-// 🛠️ Le port 4242 est forcé pour s'aligner sur les requêtes du Front-end
+// Le port 4242 est forcé pour s'aligner sur les requêtes du Front-end
 const PORT = 4242;
 
 app.use(cors());
@@ -31,7 +30,7 @@ app.use(express.json());
 // 1. Routes d'authentification normales
 app.use("/api/auth", authRoutes);
 
-// 🛠️ PATCH DE SÉCURITÉ ANTI-CRASH POUR LES COURS (CourseDashboard)
+//  PATCH DE SÉCURITÉ ANTI-CRASH POUR LES COURS (CourseDashboard)
 app.get("/api/courses", async (req, res) => {
   try {
     const rawCourses = await Course.find().lean();
@@ -55,7 +54,7 @@ app.get("/api/courses", async (req, res) => {
 });
 app.use("/api/courses", courseRoutes);
 
-// 🛠️ INTERCEPTEUR DE SECOURS POUR LES LEÇONS DE L'ADMIN (Gestion des Leçons)
+// (Gestion des Leçons)
 app.get("/api/lessons", async (req, res, next) => {
   if (req.query.courseId || req.query.course) {
     try {
@@ -70,18 +69,18 @@ app.get("/api/lessons", async (req, res, next) => {
 });
 app.use("/api/lessons", lessonRoutes);
 
-// 3. Autres routes classiques
+//  Autres routes classiques
 app.use("/api/quizzes", quizRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/quiz-results", quizResultRoutes);
 app.use("/api/notifications", notificationRoutes);
 
-// 🛠️ FIX PROGRESS : Renvoie un tableau vide pour que progress.find() ne crashe pas
+//   Renvoie un tableau vide pour que progress.find() ne crashe pas
 app.use("/api/progress", (req, res) => {
   return res.status(200).json([]);
 });
 
-// 4. Connexion Base de données et démarrage
+// Connexion Base de données et démarrage
 if (process.env.NODE_ENV !== "test") {
   mongoose
     .connect(process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/corelab-course")

@@ -18,9 +18,10 @@ export const QuizResult = () => {
     passed: true,
     correctAnswers: [true, true, true, true, false],
   };
-  const totalQuestions = state?.totalQuestions ?? result.correctAnswers.length;
+  const correctAnswers = result.correctAnswers ?? [];
+  const totalQuestions = state?.totalQuestions ?? correctAnswers.length;
   const passingScore = state?.passingScore ?? 70;
-  const correctCount = result.correctAnswers.filter(Boolean).length;
+  const correctCount = correctAnswers.filter(Boolean).length;
 
   return (
     <div className="flex flex-col gap-6">
