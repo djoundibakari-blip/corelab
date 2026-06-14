@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         window.location.href = '/setup-password';
       }
     } catch (error) {
-      throw new Error('Erreur lors de la connexion');
+      throw new Error('Erreur lors de la connexion', { cause: error });
     }
   };
 
