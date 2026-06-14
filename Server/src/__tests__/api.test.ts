@@ -6,7 +6,7 @@ import { app } from "../index";
 import { Quiz } from "../models/Quiz";
 import { User } from "../models/User";
 
-describe("API - Permissions et Validations", () => {
+describe("main", () => {
   
   let mockStudentId: string;
   let mockStudentToken: string; 
