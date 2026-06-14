@@ -5,12 +5,19 @@ import mongoose from "mongoose";
 
 export const saveQuizResult = async (req: Request, res: Response) => {
   try {
-    // Si studentId n'est pas fourni (souvent géré par le token sur le front), on prend un ID du seed ou un fallback
-    const studentId = req.body.studentId || req.body.userId || "65c1f1f1f1f1f1f1f1f1f1f1";
+    const studentId = req.body.studentId || req.body.userId;
     const { quizId, answers } = req.body;
 
     if (!quizId || !answers) {
       return res.status(400).json({ message: "Données manquantes (quizId ou answers)." });
+    }
+
+    if (!Array.isArray(answers)) {
+      return res.status(400).json({ message: "Le champ answers doit être un tableau." });
+    }
+
+    if (studentId && !mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({ message: "Format du studentId invalide." });
     }
 
     // Récupérer le quiz pour vérifier les bonnes réponses
