@@ -8,7 +8,7 @@ import {
   importStructuredQuiz,
 } from "../controllers/quiz.controller";
 
-// middlewares
+// Je protège les routes avec les middlewares d'authentification et de rôle
 import { requireAuth } from "../middlewares/auth.middleware";
 import { requireRole } from "../middlewares/role.middleware";
 

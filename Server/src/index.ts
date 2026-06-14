@@ -85,12 +85,12 @@ if (process.env.NODE_ENV !== "test") {
   mongoose
     .connect(process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/corelab-course")
     .then(() => {
-      console.log("Connected to MongoDB");
+      console.log("Connecté à MongoDB");
       app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
+        console.log(`Serveur démarré sur le port ${PORT}`);
       });
     })
     .catch((error) => {
-      console.error("MongoDB connection error:", error);
+      console.error("Erreur de connexion MongoDB :", error);
     });
 }
