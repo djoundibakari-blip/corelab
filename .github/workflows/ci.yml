@@ -53,13 +53,10 @@ jobs:
         with:
           node-version: 20
 
-      - name: Mise à jour de npm
-        run: npm install -g npm@11
-
       - name: Installation des dépendances backend
         run: |
           cd Server
-          npm ci
+          npm install
 
       - name: Lancement des tests API (Jest)
         env:
