@@ -1,11 +1,13 @@
 name: CI CoreLab
 
-# Je déclenche ce pipeline uniquement sur les Pull Requests vers main.
-# Les pushs directs sur main sont interdits — seules les PR passent ici.
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
 
