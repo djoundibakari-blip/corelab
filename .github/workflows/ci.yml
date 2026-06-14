@@ -54,7 +54,7 @@ jobs:
       - name: Installation des dépendances backend
         run: |
           cd Server
-          npm install
+          npm ci
 
       - name: Lancement des tests API (Jest)
         env:
@@ -84,7 +84,7 @@ jobs:
       - name: Installation des dépendances frontend
         run: |
           cd client
-          npm install
+          npm ci
 
       - name: Vérification du code avec le linter
         run: |
