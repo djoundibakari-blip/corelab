@@ -3,6 +3,30 @@ import { QuizResult } from "../models/QuizResult";
 import { Quiz } from "../models/Quiz";
 import mongoose from "mongoose";
 
+export const getQuizResults = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const query = user.role === "admin" ? {} : { student: user.id };
+    const results = await QuizResult.find(query)
+      .populate("student", "firstName lastName email")
+      .populate("quiz", "title passingScore course")
+      .sort({ createdAt: -1 });
+
+    const formatted = results.map((r: any) => ({
+      _id: r._id,
+      userId: { _id: r.student?._id, email: r.student?.email ?? "—" },
+      quizId: { _id: r.quiz?._id, lessonId: r.quiz?.title ?? "—", passingScore: r.quiz?.passingScore },
+      score: r.score,
+      passed: r.score >= (r.quiz?.passingScore ?? 70),
+      submittedAt: r.createdAt,
+    }));
+
+    return res.status(200).json(formatted);
+  } catch (error) {
+    return res.status(500).json({ message: "Erreur serveur" });
+  }
+};
+
 export const saveQuizResult = async (req: Request, res: Response) => {
   try {
     const studentId = (req as any).user?.id;

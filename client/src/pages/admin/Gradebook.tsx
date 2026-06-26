@@ -56,10 +56,7 @@ export const Gradebook = () => {
     quizService
       .getAdminAttempts()
       .then(setAttempts)
-      .catch(() => {
-        console.error('Erreur lors du chargement du carnet de notes');
-        setAttempts(MOCK_ATTEMPTS);
-      })
+      .catch(() => setAttempts([]))
       .finally(() => setLoading(false));
   }, []);
 

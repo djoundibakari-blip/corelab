@@ -1,16 +1,40 @@
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { BookOpen, BarChart3, UploadCloud, GraduationCap, LogOut } from 'lucide-react';
+import axios from 'axios';
+import { BookOpen, BarChart3, UploadCloud, GraduationCap, LogOut, Users, Bell } from 'lucide-react';
 
 export const MainLayout = () => {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const location = useLocation();
+  const [notifCount, setNotifCount] = useState(0);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifs, setNotifs] = useState<{ _id: string; message: string; isRead: boolean }[]>([]);
 
   const isActive = (path: string) => location.pathname.startsWith(path);
+  const headers = { Authorization: `Bearer ${token}` };
+
+  useEffect(() => {
+    if (!token) return;
+    axios.get('/api/notifications', { headers })
+      .then(r => {
+        setNotifs(r.data);
+        setNotifCount(r.data.filter((n: any) => !n.isRead).length);
+      })
+      .catch(() => {});
+  }, [location.pathname]);
+
+  const handleOpenNotif = async () => {
+    setNotifOpen(o => !o);
+    if (!notifOpen && notifCount > 0) {
+      await axios.put('/api/notifications/read-all', {}, { headers }).catch(() => {});
+      setNotifCount(0);
+      setNotifs(prev => prev.map(n => ({ ...n, isRead: true })));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Top navigation bar */}
       <header className="sticky top-0 z-30 border-b border-gray-200 bg-white/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -25,12 +49,33 @@ export const MainLayout = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={logout}
+          <div className="flex items-center gap-2 relative">
+            <div className="relative">
+              <button onClick={handleOpenNotif}
+                className="relative p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition">
+                <Bell className="w-4 h-4" />
+                {notifCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {notifCount > 9 ? '9+' : notifCount}
+                  </span>
+                )}
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 top-10 w-72 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                  <div className="px-4 py-2.5 border-b border-gray-100 text-xs font-semibold text-gray-600 uppercase">Notifications</div>
+                  {notifs.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-6">Aucune notification</p>
+                  ) : notifs.map(n => (
+                    <div key={n._id} className={`px-4 py-3 text-sm border-b border-gray-50 last:border-0 ${n.isRead ? 'text-gray-500' : 'text-gray-900 font-medium'}`}>
+                      {n.message}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button onClick={logout}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 transition-colors"
-              title="Déconnexion"
-            >
+              title="Déconnexion">
               <LogOut className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -38,7 +83,6 @@ export const MainLayout = () => {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex gap-6">
-        {/* Sidebar */}
         <nav className="w-52 flex-shrink-0 hidden lg:block">
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden sticky top-20">
             <div className="px-3 py-2.5 border-b border-gray-200">
@@ -49,44 +93,36 @@ export const MainLayout = () => {
             <ul className="p-2 flex flex-col gap-0.5">
               {user?.role === 'student' ? (
                 <li>
-                  <Link
-                    to="/student/courses"
-                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
-                      ${isActive('/student') ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}
-                  >
+                  <Link to="/student/courses"
+                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
+                      ${isActive('/student') ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
                     <BookOpen className="w-4 h-4 flex-shrink-0" />
                     Mes Cours
                   </Link>
                 </li>
               ) : (
                 <>
-                  <li>
-                    <Link
-                      to="/admin/gradebook"
-                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
-                        ${isActive('/admin/gradebook') ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}
-                    >
-                      <BarChart3 className="w-4 h-4 flex-shrink-0" />
-                      Carnet de Notes
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/lessons"
-                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
-                        ${isActive('/admin/lessons') ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}
-                    >
-                      <UploadCloud className="w-4 h-4 flex-shrink-0" />
-                      Gestion des Leçons
-                    </Link>
-                  </li>
+                  {[
+                    { to: '/admin/gradebook', icon: <BarChart3 className="w-4 h-4" />, label: 'Carnet de Notes' },
+                    { to: '/admin/courses', icon: <BookOpen className="w-4 h-4" />, label: 'Cours' },
+                    { to: '/admin/lessons', icon: <UploadCloud className="w-4 h-4" />, label: 'Leçons' },
+                    { to: '/admin/users', icon: <Users className="w-4 h-4" />, label: 'Utilisateurs' },
+                  ].map(({ to, icon, label }) => (
+                    <li key={to}>
+                      <Link to={to}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
+                          ${isActive(to) ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
+                        {icon}
+                        {label}
+                      </Link>
+                    </li>
+                  ))}
                 </>
               )}
             </ul>
           </div>
         </nav>
 
-        {/* Main content */}
         <main className="flex-1 min-w-0">
           <div className="bg-white border border-gray-200 rounded-xl p-5 sm:p-6">
             <Outlet />

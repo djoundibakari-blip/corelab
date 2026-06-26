@@ -54,10 +54,15 @@ app.get("/api/courses", async (req, res) => {
         const lessons = await Lesson.find({ course: course._id }).sort({ order: 1 }).lean();
         const quizzes = await Quiz.find({ course: course._id }).lean();
         
+        const mappedLessons = (lessons || []).map((l: any) => ({
+          ...l,
+          courseId: l.course,
+          htmlContent: l.htmlContent || l.content || "",
+        }));
         return {
           ...course,
-          lessons: lessons || [], 
-          quizzes: quizzes || []   
+          lessons: mappedLessons,
+          quizzes: quizzes || [],
         };
       })
     );

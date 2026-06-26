@@ -39,6 +39,24 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
+export const setupPassword = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { password } = req.body;
+    if (!password || password.length < 6) {
+      return res.status(400).json({ message: "Mot de passe trop court (6 caractères min)" });
+    }
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "Utilisateur introuvable" });
+    user.password = password;
+    user.firstLogin = false;
+    await user.save();
+    return res.status(200).json({ message: "Mot de passe mis à jour" });
+  } catch (error) {
+    return res.status(500).json({ message: "Erreur serveur" });
+  }
+};
+
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -79,6 +97,7 @@ export const login = async (req: Request, res: Response) => {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        firstLogin: user.firstLogin,
       },
     });
   } catch (error) {

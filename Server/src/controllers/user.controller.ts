@@ -3,6 +3,15 @@ import fs from "fs";
 import { User } from "../models/User";
 import csv from "csv-parser";
 
+export const getUsers = async (_req: Request, res: Response) => {
+  try {
+    const users = await User.find().select("-password").lean();
+    return res.status(200).json(users);
+  } catch (error) {
+    return res.status(500).json({ message: "Erreur serveur" });
+  }
+};
+
 export const importUsersFromCsv = async (req: Request, res: Response) => {
   try {
     if (!req.file) {
