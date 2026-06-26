@@ -14,7 +14,7 @@ const csvFilter = (_req: Request, file: Express.Multer.File, cb: FileFilterCallb
 };
 
 const upload = multer({
-  dest: "uploads/",
+  dest: "/tmp/uploads/",
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: csvFilter,
 });
