@@ -54,21 +54,9 @@ var z = 15;</code></pre>
     fetchLesson();
   }, [lessonId]);
 
-  const handleCompleteLesson = async () => {
+  const handleCompleteLesson = () => {
     if (!lesson) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        'http://localhost:4242/api/progress/complete',
-        { lessonId: lesson._id },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      // Redirect to quiz after completing lesson
-      navigate(`/student/quiz/${lesson._id}`);
-    } catch (error) {
-      console.error('Erreur lors de la complétion de la leçon:', error);
-    }
+    navigate(`/student/quiz/${lesson._id}`);
   };
 
   if (loading) {

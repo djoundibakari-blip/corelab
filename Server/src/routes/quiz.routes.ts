@@ -3,6 +3,7 @@ import {
   createQuiz,
   getQuizzes,
   getQuizById,
+  getQuizByLesson,
   updateQuiz,
   deleteQuiz,
   importStructuredQuiz,
@@ -19,6 +20,7 @@ router.post("/", requireAuth, requireRole(["admin"]), createQuiz);
 router.post("/import", requireAuth, requireRole(["admin"]), importStructuredQuiz); 
 
 router.get("/", getQuizzes);
+router.get("/lesson/:lessonId", getQuizByLesson);
 router.get("/:id", getQuizById);
 
 router.put("/:id", requireAuth, requireRole(["admin"]), updateQuiz);

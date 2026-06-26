@@ -21,15 +21,14 @@ export const Login = () => {
       // Otherwise, we redirect to the appropriate dashboard
       // NOTE: If firstLogin is true, the login function will redirect to /setup-password
       // So we only redirect here if the login function didn't redirect
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (user.firstLogin) {
-        // Already redirected by login function, do nothing
-        return;
-      }
-      if (!email.includes('admin')) {
-        navigate('/student/courses');
-      } else {
+      const stored = localStorage.getItem('user');
+      const user = stored ? JSON.parse(stored) : null;
+      if (!user) return;
+      if (user.firstLogin) return;
+      if (user.role === 'admin') {
         navigate('/admin/gradebook');
+      } else {
+        navigate('/student/courses');
       }
     } catch (err) {
       setError('Erreur lors de la connexion');

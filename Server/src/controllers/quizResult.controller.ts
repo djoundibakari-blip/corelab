@@ -5,8 +5,12 @@ import mongoose from "mongoose";
 
 export const saveQuizResult = async (req: Request, res: Response) => {
   try {
-    const studentId = req.body.studentId || req.body.userId;
+    const studentId = (req as any).user?.id;
     const { quizId, answers } = req.body;
+
+    if (!studentId) {
+      return res.status(401).json({ message: "Utilisateur non identifié." });
+    }
 
     if (!quizId || !answers) {
       return res.status(400).json({ message: "Données manquantes (quizId ou answers)." });
@@ -16,7 +20,7 @@ export const saveQuizResult = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Le champ answers doit être un tableau." });
     }
 
-    if (studentId && !mongoose.Types.ObjectId.isValid(studentId)) {
+    if (!mongoose.Types.ObjectId.isValid(studentId)) {
       return res.status(400).json({ message: "Format du studentId invalide." });
     }
 
@@ -43,7 +47,7 @@ export const saveQuizResult = async (req: Request, res: Response) => {
     const errorsCount = totalQuestions - correctCount;
 
     const newResult = new QuizResult({
-      student: mongoose.Types.ObjectId.isValid(studentId) ? new mongoose.Types.ObjectId(studentId) : new mongoose.Types.ObjectId(),
+      student: new mongoose.Types.ObjectId(studentId),
       quiz: quiz._id,
       answers,
       score: scorePercentage

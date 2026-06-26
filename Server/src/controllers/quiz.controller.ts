@@ -56,6 +56,32 @@ export const importStructuredQuiz = async (req: Request, res: Response) => {
   }
 };
 
+export const getQuizByLesson = async (req: Request, res: Response) => {
+  try {
+    const lesson = await (await import("../models/Lesson")).Lesson.findById(req.params.lessonId);
+    if (!lesson) {
+      return res.status(404).json({ message: "Leçon introuvable" });
+    }
+    const quiz = await Quiz.findOne({ course: lesson.course });
+    if (!quiz) {
+      return res.status(404).json({ message: "Aucun quiz pour cette leçon" });
+    }
+    const sanitized = {
+      _id: quiz._id,
+      title: quiz.title,
+      course: quiz.course,
+      questions: quiz.questions.map((q) => ({
+        questionText: q.questionText,
+        options: q.propositions,
+        correctAnswer: q.correctAnswer,
+      })),
+    };
+    return res.status(200).json(sanitized);
+  } catch (error) {
+    return res.status(500).json({ message: "Erreur serveur" });
+  }
+};
+
 export const getQuizzes = async (_req: Request, res: Response) => {
   try {
     const quizzes = await Quiz.find().populate("course");

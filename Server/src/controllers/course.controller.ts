@@ -36,6 +36,7 @@ export const updateCourse = async (req: Request, res: Response) => {
   try {
     const course = await Course.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
+      runValidators: true,
     }).populate("students");
 
     if (!course) {
@@ -67,8 +68,6 @@ export const assignUserToCourse = async (req: Request, res: Response) => {
     if (!courseId || !userId) {
       return res.status(400).json({ message: "courseId et userId sont requis" });
     }
-console.log(req.body);
-console.log({ courseId, userId });
 
     const course = await Course.findById(courseId);
     if (!course) {
