@@ -37,7 +37,7 @@ export const CourseManagement = () => {
     try {
       await axios.delete(`/api/courses/${id}`, { headers });
       setCourses(prev => prev.filter(c => c._id !== id));
-    } catch {}
+    } catch { /* ignore */ }
   };
 
   if (loading) return <div className="text-center py-8 text-sm text-gray-500">Chargement...</div>;

@@ -3,49 +3,6 @@ import { quizService } from '@/services/quizService';
 import type { QuizAttempt } from '@/types';
 import { Search, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
 
-const MOCK_ATTEMPTS: QuizAttempt[] = [
-  {
-    _id: '1',
-    userId: { _id: 'u1', email: 'alice.martin@corp.io' },
-    quizId: { _id: 'q1', lessonId: 'JavaScript Basics' },
-    score: 92,
-    passed: true,
-    submittedAt: '2025-05-28T10:30:00Z',
-  },
-  {
-    _id: '2',
-    userId: { _id: 'u2', email: 'bob.chen@corp.io' },
-    quizId: { _id: 'q2', lessonId: 'React Hooks' },
-    score: 65,
-    passed: false,
-    submittedAt: '2025-05-27T14:45:00Z',
-  },
-  {
-    _id: '3',
-    userId: { _id: 'u3', email: 'carla.dupont@corp.io' },
-    quizId: { _id: 'q1', lessonId: 'JavaScript Basics' },
-    score: 78,
-    passed: true,
-    submittedAt: '2025-05-27T09:15:00Z',
-  },
-  {
-    _id: '4',
-    userId: { _id: 'u4', email: 'david.kim@corp.io' },
-    quizId: { _id: 'q3', lessonId: 'Node.js APIs' },
-    score: 55,
-    passed: false,
-    submittedAt: '2025-05-26T16:20:00Z',
-  },
-  {
-    _id: '5',
-    userId: { _id: 'u5', email: 'eva.rossi@corp.io' },
-    quizId: { _id: 'q2', lessonId: 'React Hooks' },
-    score: 88,
-    passed: true,
-    submittedAt: '2025-05-25T11:00:00Z',
-  },
-];
-
 export const Gradebook = () => {
   const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
   const [loading, setLoading] = useState(true);

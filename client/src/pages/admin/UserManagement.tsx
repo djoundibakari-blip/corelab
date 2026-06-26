@@ -49,7 +49,7 @@ export const UserManagement = () => {
     setAssigning(prev => ({ ...prev, [userId]: true }));
     try {
       await axios.post('/api/courses/assign-user', { userId, courseId }, { headers });
-    } catch {}
+    } catch { /* ignore */ }
     finally { setAssigning(prev => ({ ...prev, [userId]: false })); }
   };
 
