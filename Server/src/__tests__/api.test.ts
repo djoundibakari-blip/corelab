@@ -93,25 +93,35 @@ describe("test", () => {
     it("rejette les réponses qui ne sont pas un tableau", async () => {
       const response = await request(app)
         .post("/api/quiz-results/submit")
+        .set("Authorization", `Bearer ${mockStudentToken}`)
         .send({
-          studentId: mockStudentId,
           quizId: mockQuizId,
-          answers: "Pas un tableau" 
+          answers: "Pas un tableau"
         });
 
       expect(response.status).toBe(400);
     });
 
-    it("rejette un studentId invalide", async () => {
+    it("rejette un quizId manquant", async () => {
       const response = await request(app)
         .post("/api/quiz-results/submit")
+        .set("Authorization", `Bearer ${mockStudentToken}`)
         .send({
-          studentId: "ID-COMPLETEMENT-FAUX-123", 
-          quizId: mockQuizId,
           answers: ["Oui"]
         });
 
       expect(response.status).toBe(400);
+    });
+
+    it("rejette une soumission sans token", async () => {
+      const response = await request(app)
+        .post("/api/quiz-results/submit")
+        .send({
+          quizId: mockQuizId,
+          answers: ["Oui"]
+        });
+
+      expect(response.status).toBe(401);
     });
   });
 });
