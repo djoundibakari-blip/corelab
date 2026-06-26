@@ -80,17 +80,19 @@ app.use("/api/progress", (req, res) => {
   return res.status(200).json([]);
 });
 
-// Connexion Base de données et démarrage
+// Connexion MongoDB au démarrage du module (local et serverless)
 if (process.env.NODE_ENV !== "test") {
   mongoose
     .connect(process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/corelab-course")
-    .then(() => {
-      console.log("Connecté à MongoDB");
-      app.listen(PORT, () => {
-        console.log(`Serveur démarré sur le port ${PORT}`);
-      });
-    })
-    .catch((error) => {
-      console.error("Erreur de connexion MongoDB :", error);
-    });
+    .then(() => console.log("Connecté à MongoDB"))
+    .catch((error) => console.error("Erreur de connexion MongoDB :", error));
 }
+
+// Écoute uniquement en local (pas sur Vercel serverless)
+if (process.env.NODE_ENV !== "test" && !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Serveur démarré sur le port ${PORT}`);
+  });
+}
+
+export default app;
