@@ -42,6 +42,9 @@ coverage/
 # Claude Code
 .claude/
 
+# Vite cache
+client/.vite/
+
 # Misc
 .cache/
 .temp/
