@@ -24,14 +24,19 @@ export const app: Express = express();
 // Le port 4242 est forcé pour s'aligner sur les requêtes du Front-end
 const PORT = 4242;
 
-const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
-  : ["http://localhost:3000", "http://localhost:5173"];
+const allowedOrigins = ["http://localhost:3000", "http://localhost:5173"];
+if (process.env.CORS_ORIGIN) {
+  allowedOrigins.push(...process.env.CORS_ORIGIN.split(",").map((o) => o.trim()));
+}
+if (process.env.VERCEL_URL) {
+  allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+}
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      if (!origin || allowedOrigins.some((o) => origin === o || origin.endsWith(".vercel.app")))
+        return callback(null, true);
       callback(new Error("CORS non autorisé"));
     },
     credentials: true,
