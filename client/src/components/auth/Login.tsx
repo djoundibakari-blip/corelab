@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 export const Login = () => {
@@ -96,13 +96,12 @@ export const Login = () => {
             </button>
           </form>
 
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-600 font-medium mb-2">Comptes de démo :</p>
-            <div className="space-y-1 text-xs text-gray-500">
-              <p>• Étudiant: student@test.com / n'importe quel mot de passe</p>
-              <p>• Admin: admin@test.com / n'importe quel mot de passe</p>
-            </div>
-          </div>
+          <p className="text-center text-sm text-gray-500 mt-4">
+            Pas encore de compte ?{' '}
+            <Link to="/register" className="text-blue-600 hover:underline font-medium">
+              Créer un compte élève
+            </Link>
+          </p>
         </div>
       </div>
     </div>

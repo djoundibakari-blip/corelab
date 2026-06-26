@@ -4,7 +4,7 @@ import { User } from "../models/User";
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { firstName, lastName, email, password, role } = req.body;
+    const { firstName, lastName, email, password } = req.body;
 
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({ message: "Tous les champs sont requis" });
@@ -20,7 +20,7 @@ export const register = async (req: Request, res: Response) => {
       lastName,
       email: email.trim().toLowerCase(),
       password,
-      role: role || "student",
+      role: "student",
     });
 
     return res.status(201).json({

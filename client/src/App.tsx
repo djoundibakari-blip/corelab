@@ -3,6 +3,7 @@ import { AuthProvider } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Login } from '@/components/auth/Login';
+import { Register } from '@/components/auth/Register';
 import { CourseDashboard } from '@/pages/student/CourseDashboard';
 import { LessonView } from '@/pages/student/LessonView';
 import { QuizView } from '@/pages/student/QuizView';
@@ -19,6 +20,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/setup-password" element={<SetupPassword />} />
           
           <Route element={<ProtectedRoute />}>
