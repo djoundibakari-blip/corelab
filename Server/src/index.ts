@@ -27,6 +27,9 @@ const PORT = 4242;
 app.use(cors());
 app.use(express.json());
 
+// Healthcheck Vercel
+app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
+
 // 1. Routes d'authentification normales
 app.use("/api/auth", authRoutes);
 

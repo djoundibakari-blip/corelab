@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Quiz } from "../models/Quiz";
 import { Course } from "../models/Course";
+import { Lesson } from "../models/Lesson";
 
 export const createQuiz = async (req: Request, res: Response) => {
   try {
@@ -58,7 +59,7 @@ export const importStructuredQuiz = async (req: Request, res: Response) => {
 
 export const getQuizByLesson = async (req: Request, res: Response) => {
   try {
-    const lesson = await (await import("../models/Lesson")).Lesson.findById(req.params.lessonId);
+    const lesson = await Lesson.findById(req.params.lessonId);
     if (!lesson) {
       return res.status(404).json({ message: "Leçon introuvable" });
     }
