@@ -1,20 +1,12 @@
 {
-  "name": "server",
+  "name": "corelab",
   "version": "1.0.0",
-  "main": "dist/index.js",
   "private": true,
   "scripts": {
-    "dev": "nodemon src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
+    "dev:server": "cd Server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build": "cd Server && npm install && npm run build"
   },
-  "dependencies": {
-    "dotenv": "^17.4.2",
-    "mongoose": "^9.6.3",
-    "multer": "^2.1.1",
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.14"
-  }
+  "dependencies": {},
+  "devDependencies": {}
 }
