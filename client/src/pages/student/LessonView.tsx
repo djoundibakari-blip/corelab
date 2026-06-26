@@ -17,7 +17,7 @@ export const LessonView = () => {
 
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`http://localhost:4242/api/lessons/${lessonId}`, {
+        const response = await axios.get(`/api/lessons/${lessonId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setLesson(response.data);

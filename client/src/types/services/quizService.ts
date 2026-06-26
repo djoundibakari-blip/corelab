@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { Quiz, QuizAttempt, QuizSubmitResult } from '@/types';
 
-const API_BASE = 'http://localhost:4242/api';
+const API_BASE = '/api';
 
 const authHeaders = () => {
   const token = localStorage.getItem('token');

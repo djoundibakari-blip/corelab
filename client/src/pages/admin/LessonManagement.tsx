@@ -15,7 +15,7 @@ export const LessonManagement = () => {
     const fetchCourses = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:4242/api/courses', {
+        const response = await axios.get('/api/courses', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setCourses(response.data);
@@ -78,7 +78,7 @@ export const LessonManagement = () => {
         // Logique de création (POST)
         const { _id, ...payload } = editingLesson;
         const response = await axios.post(
-          'http://localhost:4242/api/lessons',
+          '/api/lessons',
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -89,7 +89,7 @@ export const LessonManagement = () => {
       } else {
         // Logique de mise à jour (PUT)
         await axios.put(
-          `http://localhost:4242/api/lessons/${editingLesson._id}`,
+          `/api/lessons/${editingLesson._id}`,
           editingLesson,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -121,7 +121,7 @@ export const LessonManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:4242/api/lessons/${lessonId}`, {
+      await axios.delete(`/api/lessons/${lessonId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

@@ -14,7 +14,7 @@ export const CourseDashboard = () => {
     const fetchCourses = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:4242/api/courses', {
+        const response = await axios.get('/api/courses', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setCourses(response.data);
@@ -50,7 +50,7 @@ export const CourseDashboard = () => {
     const fetchProgress = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:4242/api/progress', {
+        const response = await axios.get('/api/progress', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setProgress(response.data);
