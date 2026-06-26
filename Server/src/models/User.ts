@@ -1,5 +1,5 @@
 import { Schema, model, Document } from "mongoose";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export type UserRole = "admin" | "student";
 // limiter les rôles possibles à "admin" et "student"
