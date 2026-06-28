@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import axios from 'axios';
-import { BookOpen, BarChart3, UploadCloud, GraduationCap, LogOut, Users, Bell } from 'lucide-react';
+import { BookOpen, BarChart3, UploadCloud, GraduationCap, LogOut, Users, Bell, TrendingUp } from 'lucide-react';
 
 export const MainLayout = () => {
   const { user, token, logout } = useAuth();
@@ -103,6 +103,7 @@ export const MainLayout = () => {
               ) : (
                 <>
                   {[
+                    { to: '/admin/suivi', icon: <TrendingUp className="w-4 h-4" />, label: 'Tableau de Suivi' },
                     { to: '/admin/gradebook', icon: <BarChart3 className="w-4 h-4" />, label: 'Carnet de Notes' },
                     { to: '/admin/courses', icon: <BookOpen className="w-4 h-4" />, label: 'Cours' },
                     { to: '/admin/lessons', icon: <UploadCloud className="w-4 h-4" />, label: 'Leçons' },

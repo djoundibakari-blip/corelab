@@ -12,6 +12,7 @@ import { LessonManagement } from '@/pages/admin/LessonManagement';
 import { Gradebook } from '@/pages/admin/Gradebook';
 import { CourseManagement } from '@/pages/admin/CourseManagement';
 import { UserManagement } from '@/pages/admin/UserManagement';
+import { ProgressTracking } from '@/pages/admin/ProgressTracking';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
               <Route path="/admin/courses" element={<CourseManagement />} />
               <Route path="/admin/lessons" element={<LessonManagement />} />
               <Route path="/admin/users" element={<UserManagement />} />
+              <Route path="/admin/suivi" element={<ProgressTracking />} />
 
               <Route path="/" element={<Navigate to="/student/courses" replace />} />
             </Route>

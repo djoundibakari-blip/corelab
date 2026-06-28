@@ -1,13 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import type { Lesson, Course } from '@/types';
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Upload, FileJson } from 'lucide-react';
 
 export const LessonManagement = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
+  const [quizJson, setQuizJson] = useState('');
+  const [quizImporting, setQuizImporting] = useState(false);
+  const [quizMsg, setQuizMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const quizFileRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -130,6 +134,31 @@ export const LessonManagement = () => {
     } catch (error) {
       console.error('Erreur lors de la suppression de la leçon:', error);
     }
+  };
+
+  const handleQuizFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setQuizJson(ev.target?.result as string);
+    reader.readAsText(file);
+  };
+
+  const handleImportQuiz = async () => {
+    if (!selectedCourse) { setQuizMsg({ ok: false, text: 'Sélectionnez un cours d\'abord.' }); return; }
+    if (!quizJson.trim()) { setQuizMsg({ ok: false, text: 'Le JSON est vide.' }); return; }
+    let parsed: any;
+    try { parsed = JSON.parse(quizJson); } catch { setQuizMsg({ ok: false, text: 'JSON invalide.' }); return; }
+    const token = localStorage.getItem('token');
+    setQuizImporting(true); setQuizMsg(null);
+    try {
+      await axios.post('/api/quizzes/import', { ...parsed, courseId: selectedCourse }, { headers: { Authorization: `Bearer ${token}` } });
+      setQuizMsg({ ok: true, text: 'Quiz importé avec succès !' });
+      setQuizJson('');
+      if (quizFileRef.current) quizFileRef.current.value = '';
+    } catch (err: any) {
+      setQuizMsg({ ok: false, text: err?.response?.data?.message ?? 'Erreur import' });
+    } finally { setQuizImporting(false); }
   };
 
   if (loading) {
@@ -266,6 +295,51 @@ export const LessonManagement = () => {
           )}
         </div>
       )}
+
+      {/* ── Import Quiz JSON ─────────────────────────────────────────────── */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+          <FileJson className="w-4 h-4 text-blue-600" />
+          <h3 className="font-semibold text-gray-900">Importer un Quiz (JSON)</h3>
+        </div>
+        <div className="p-4 flex flex-col gap-3">
+          <p className="text-xs text-gray-500">
+            Format attendu :
+            <code className="ml-1 bg-gray-100 px-1 rounded text-xs">
+              {'{"title":"Mon Quiz","questions":[{"questionText":"...","propositions":["A","B"],"correctAnswer":"A"}]}'}
+            </code>
+          </p>
+          <div className="flex gap-2">
+            <input ref={quizFileRef} type="file" accept=".json" className="hidden" onChange={handleQuizFileChange} />
+            <button
+              onClick={() => quizFileRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700 transition"
+            >
+              <Upload className="w-4 h-4" />
+              Charger un fichier .json
+            </button>
+          </div>
+          <textarea
+            value={quizJson}
+            onChange={(e) => setQuizJson(e.target.value)}
+            rows={5}
+            placeholder='{"title": "Mon Quiz", "questions": [...]}'
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none"
+          />
+          {quizMsg && (
+            <p className={`text-sm font-medium ${quizMsg.ok ? 'text-green-600' : 'text-red-500'}`}>{quizMsg.text}</p>
+          )}
+          <button
+            onClick={handleImportQuiz}
+            disabled={quizImporting || !selectedCourse}
+            className="self-start flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-40"
+          >
+            <Plus className="w-4 h-4" />
+            {quizImporting ? 'Import...' : 'Importer le quiz'}
+          </button>
+          {!selectedCourse && <p className="text-xs text-amber-600">Sélectionnez un cours ci-dessus avant d'importer.</p>}
+        </div>
+      </div>
     </div>
   );
 };
