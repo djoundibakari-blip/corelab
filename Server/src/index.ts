@@ -16,14 +16,13 @@ import { Course } from "./models/Course";
 import { Lesson } from "./models/Lesson";
 import { Quiz } from "./models/Quiz";
 
-//  pointer directement sur le .env du dossier Server
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 export const app: Express = express();
 
-// Le port 4242 est forcé pour s'aligner sur les requêtes du Front-end
 const PORT = 4242;
 
+// ── CORS ──────────────────────────────────────────────────────────────────────
 const allowedOrigins = ["http://localhost:3000", "http://localhost:5173"];
 if (process.env.CORS_ORIGIN) {
   allowedOrigins.push(...process.env.CORS_ORIGIN.split(",").map((o) => o.trim()));
@@ -44,31 +43,50 @@ app.use(
 );
 app.use(express.json());
 
-// Healthcheck Vercel
+// ── MongoDB connection (cached, serverless-compatible) ────────────────────────
+let dbReady: Promise<typeof mongoose> | null = null;
+
+async function connectDB() {
+  if (mongoose.connection.readyState === 1) return;
+  if (!dbReady) {
+    const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/corelab-course";
+    dbReady = mongoose.connect(uri);
+  }
+  await dbReady;
+}
+
+// Healthcheck — ne nécessite pas MongoDB
 app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
 
-// 1. Routes d'authentification normales
+// Middleware de connexion DB — doit être avant toutes les routes métier
+if (process.env.NODE_ENV !== "test") {
+  app.use(async (_req, res, next) => {
+    try {
+      await connectDB();
+      next();
+    } catch (err) {
+      console.error("Erreur de connexion MongoDB :", err);
+      res.status(503).json({ message: "Base de données indisponible" });
+    }
+  });
+}
+
+// ── Routes ────────────────────────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
 
-//  PATCH DE SÉCURITÉ ANTI-CRASH POUR LES COURS (CourseDashboard)
-app.get("/api/courses", async (req, res) => {
+app.get("/api/courses", async (_req, res) => {
   try {
     const rawCourses = await Course.find().lean();
     const fullCourses = await Promise.all(
       rawCourses.map(async (course: any) => {
         const lessons = await Lesson.find({ course: course._id }).sort({ order: 1 }).lean();
         const quizzes = await Quiz.find({ course: course._id }).lean();
-        
         const mappedLessons = (lessons || []).map((l: any) => ({
           ...l,
           courseId: l.course,
           htmlContent: l.htmlContent || l.content || "",
         }));
-        return {
-          ...course,
-          lessons: mappedLessons,
-          quizzes: quizzes || [],
-        };
+        return { ...course, lessons: mappedLessons, quizzes: quizzes || [] };
       })
     );
     return res.status(200).json(fullCourses);
@@ -79,45 +97,31 @@ app.get("/api/courses", async (req, res) => {
 });
 app.use("/api/courses", courseRoutes);
 
-// (Gestion des Leçons)
 app.get("/api/lessons", async (req, res, next) => {
   if (req.query.courseId || req.query.course) {
     try {
       const courseId = req.query.courseId || req.query.course;
       const lessons = await Lesson.find({ course: courseId }).sort({ order: 1 });
       return res.status(200).json(lessons);
-    } catch (err) {
+    } catch {
       return res.status(500).json([]);
     }
   }
-  next(); 
+  next();
 });
 app.use("/api/lessons", lessonRoutes);
 
-//  Autres routes classiques
 app.use("/api/quizzes", quizRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/quiz-results", quizResultRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/progress", (_req, res) => res.status(200).json([]));
 
-//   Renvoie un tableau vide pour que progress.find() ne crashe pas
-app.use("/api/progress", (req, res) => {
-  return res.status(200).json([]);
-});
-
-// Connexion MongoDB au démarrage du module (local et serverless)
-if (process.env.NODE_ENV !== "test") {
-  mongoose
-    .connect(process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/corelab-course")
-    .then(() => console.log("Connecté à MongoDB"))
-    .catch((error) => console.error("Erreur de connexion MongoDB :", error));
-}
-
-// Écoute uniquement en local (pas sur Vercel serverless)
+// ── Démarrage local uniquement ─────────────────────────────────────────────────
 if (process.env.NODE_ENV !== "test" && !process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`Serveur démarré sur le port ${PORT}`);
-  });
+  connectDB()
+    .then(() => app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`)))
+    .catch((err) => console.error("Impossible de démarrer :", err));
 }
 
 export default app;
