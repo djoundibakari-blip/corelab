@@ -40,30 +40,30 @@ export const CourseManagement = () => {
     } catch { /* ignore */ }
   };
 
-  if (loading) return <div className="text-center py-8 text-sm text-gray-500">Chargement...</div>;
+  const inputClass = "px-4 py-2.5 bg-[#021B1A] border border-[#03624C]/50 rounded-lg text-sm text-white placeholder:text-[#707D7D] focus:outline-none focus:ring-2 focus:ring-[#00DF81]";
+
+  if (loading) return <div className="text-center py-8 text-sm text-[#707D7D]">Chargement...</div>;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2">
-        <BookOpen className="w-5 h-5 text-blue-600" />
-        <h1 className="text-xl font-bold text-gray-900">Gestion des Cours</h1>
+        <BookOpen className="w-5 h-5 text-[#00DF81]" />
+        <h1 className="text-xl font-bold text-white">Gestion des Cours</h1>
       </div>
 
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Créer un cours</h2>
+      <div className="bg-[#021B1A] border border-[#03624C]/50 rounded-xl p-4">
+        <h2 className="text-sm font-semibold text-[#AACBC4] mb-3">Créer un cours</h2>
         <form onSubmit={handleCreate} className="flex flex-col gap-3">
           <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
-            placeholder="Titre du cours" required
-            className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600" />
+            placeholder="Titre du cours" required className={inputClass} />
           <input value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
-            placeholder="Catégorie (ex: JavaScript, React...)" required
-            className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600" />
+            placeholder="Catégorie (ex: JavaScript, React...)" required className={inputClass} />
           <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
             placeholder="Description du cours" required rows={3}
-            className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none" />
-          {error && <p className="text-sm text-red-600">{error}</p>}
+            className={`${inputClass} resize-none`} />
+          {error && <p className="text-sm text-red-400">{error}</p>}
           <button type="submit" disabled={saving}
-            className="flex items-center gap-1.5 self-end px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-40">
+            className="flex items-center gap-1.5 self-end px-4 py-2 bg-[#00DF81] hover:bg-[#2CC295] text-[#021B1A] text-sm font-bold rounded-lg transition disabled:opacity-40">
             <Plus className="w-4 h-4" />
             {saving ? 'Création...' : 'Créer le cours'}
           </button>
@@ -72,16 +72,16 @@ export const CourseManagement = () => {
 
       <div className="flex flex-col gap-3">
         {courses.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-6">Aucun cours créé.</p>
+          <p className="text-sm text-[#707D7D] text-center py-6">Aucun cours créé.</p>
         ) : courses.map(c => (
-          <div key={c._id} className="flex items-start justify-between p-4 bg-white border border-gray-200 rounded-xl">
+          <div key={c._id} className="flex items-start justify-between p-4 bg-[#021B1A] border border-[#03624C]/50 rounded-xl">
             <div>
-              <p className="font-semibold text-gray-900">{c.title}</p>
-              <p className="text-xs text-blue-600 font-medium mb-1">{c.category}</p>
-              <p className="text-sm text-gray-500">{c.description}</p>
+              <p className="font-semibold text-white">{c.title}</p>
+              <p className="text-xs text-[#00DF81] font-medium mb-1">{c.category}</p>
+              <p className="text-sm text-[#707D7D]">{c.description}</p>
             </div>
             <button onClick={() => handleDelete(c._id)}
-              className="ml-4 p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition">
+              className="ml-4 p-1.5 rounded-lg text-[#707D7D] hover:text-red-400 hover:bg-red-900/20 transition">
               <Trash2 className="w-4 h-4" />
             </button>
           </div>

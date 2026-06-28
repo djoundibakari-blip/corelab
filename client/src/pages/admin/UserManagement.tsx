@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Users, Upload, UserPlus, CheckCircle } from 'lucide-react';
+import { Users, Upload, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface UserItem { _id: string; firstName: string; lastName: string; email: string; role: string; }
@@ -53,19 +53,19 @@ export const UserManagement = () => {
     finally { setAssigning(prev => ({ ...prev, [userId]: false })); }
   };
 
-  if (loading) return <div className="text-center py-8 text-sm text-gray-500">Chargement...</div>;
+  if (loading) return <div className="text-center py-8 text-sm text-[#707D7D]">Chargement...</div>;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-blue-600" />
-          <h1 className="text-xl font-bold text-gray-900">Gestion des Utilisateurs</h1>
+          <Users className="w-5 h-5 text-[#00DF81]" />
+          <h1 className="text-xl font-bold text-white">Gestion des Utilisateurs</h1>
         </div>
         <div className="flex gap-2">
           <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
           <button onClick={() => fileRef.current?.click()} disabled={importing}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-40">
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold bg-[#00DF81] hover:bg-[#2CC295] text-[#021B1A] rounded-lg transition disabled:opacity-40">
             <Upload className="w-4 h-4" />
             {importing ? 'Import...' : 'Importer CSV'}
           </button>
@@ -73,34 +73,34 @@ export const UserManagement = () => {
       </div>
 
       {importMsg && (
-        <div className={`px-4 py-3 rounded-lg text-sm border ${importMsg.startsWith('✓') ? 'bg-green-50 border-green-300 text-green-700' : 'bg-red-50 border-red-300 text-red-700'}`}>
+        <div className={`px-4 py-3 rounded-lg text-sm border ${importMsg.startsWith('✓') ? 'bg-[#00DF81]/15 border-[#00DF81]/30 text-[#00DF81]' : 'bg-red-900/30 border-red-700/50 text-red-400'}`}>
           {importMsg}
         </div>
       )}
 
-      <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3 border border-gray-200">
-        Format CSV : <code>firstName,lastName,email,password,role</code> — role = student ou admin
+      <div className="text-xs text-[#707D7D] bg-[#021B1A] rounded-lg p-3 border border-[#03624C]/50">
+        Format CSV : <code className="text-[#AACBC4]">firstName,lastName,email,password,role</code> — role = student ou admin
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200">
+      <div className="overflow-x-auto rounded-xl border border-[#03624C]/50">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-[#021B1A] border-b border-[#03624C]/50">
             <tr>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Nom</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Email</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Rôle</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Assigner à un cours</th>
+              {['Nom', 'Email', 'Rôle', 'Assigner à un cours'].map(h => (
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#707D7D] uppercase">{h}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {users.length === 0 ? (
-              <tr><td colSpan={4} className="text-center py-8 text-gray-500">Aucun utilisateur</td></tr>
+              <tr><td colSpan={4} className="text-center py-8 text-[#707D7D]">Aucun utilisateur</td></tr>
             ) : users.map((u, i) => (
-              <tr key={u._id} className={`border-b border-gray-100 last:border-0 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                <td className="px-4 py-3 font-medium text-gray-900">{u.firstName} {u.lastName}</td>
-                <td className="px-4 py-3 text-gray-600">{u.email}</td>
+              <tr key={u._id}
+                className={`border-b border-[#03624C]/30 last:border-0 ${i % 2 === 0 ? 'bg-[#032221]' : 'bg-[#021B1A]'}`}>
+                <td className="px-4 py-3 font-medium text-white">{u.firstName} {u.lastName}</td>
+                <td className="px-4 py-3 text-[#AACBC4]">{u.email}</td>
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${u.role === 'admin' ? 'bg-purple-900/40 text-purple-300 border border-purple-700/50' : 'bg-[#00DF81]/15 text-[#00DF81] border border-[#00DF81]/30'}`}>
                     {u.role}
                   </span>
                 </td>
@@ -109,7 +109,7 @@ export const UserManagement = () => {
                     {courses.map(c => (
                       <button key={c._id} onClick={() => handleAssign(u._id, c._id)}
                         disabled={assigning[u._id]}
-                        className="flex items-center gap-1 px-2 py-1 text-xs border border-gray-200 rounded-lg hover:border-blue-400 hover:text-blue-600 transition">
+                        className="flex items-center gap-1 px-2 py-1 text-xs border border-[#03624C]/50 rounded-lg text-[#AACBC4] hover:border-[#00DF81] hover:text-[#00DF81] transition">
                         <UserPlus className="w-3 h-3" />
                         {c.title}
                       </button>

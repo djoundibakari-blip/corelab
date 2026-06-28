@@ -18,9 +18,7 @@ export const CourseDashboard = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         setCourses(response.data);
-      } catch (error) {
-        console.error('Erreur lors du chargement des cours:', error);
-        // Fallback to mock data
+      } catch {
         setCourses([
           {
             _id: '1',
@@ -54,18 +52,9 @@ export const CourseDashboard = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         setProgress(response.data);
-      } catch (error) {
-        console.error('Erreur lors du chargement de la progression:', error);
-        // Fallback to mock data
+      } catch {
         setProgress([
-          {
-            _id: 'p1',
-            userId: '507f1f77bcf86cd799439011',
-            courseId: '1',
-            completedLessons: ['1-1'],
-            totalLessons: 3,
-            percentage: 33
-          }
+          { _id: 'p1', userId: '507f1f77bcf86cd799439011', courseId: '1', completedLessons: ['1-1'], totalLessons: 3, percentage: 33 }
         ]);
       }
     };
@@ -74,57 +63,45 @@ export const CourseDashboard = () => {
     fetchProgress();
   }, []);
 
-  const getCourseProgress = (courseId: string) => {
-    return progress.find(p => p.courseId === courseId);
-  };
+  const getCourseProgress = (courseId: string) => progress.find(p => p.courseId === courseId);
 
-  if (loading) {
-    return <div className="text-center py-8">Chargement des cours...</div>;
-  }
+  if (loading) return <div className="text-center py-8 text-[#AACBC4]">Chargement des cours...</div>;
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-xs font-semibold tracking-widest uppercase text-gray-600 mb-1">
-          Espace Étudiant
-        </p>
-        <h2 className="text-xl font-bold text-gray-900">Mes Cours</h2>
-        <p className="text-sm text-gray-600 mt-1">
-          Continuez votre apprentissage et passez les quiz de validation.
-        </p>
+        <p className="text-xs font-semibold tracking-widest uppercase text-[#707D7D] mb-1">Espace Étudiant</p>
+        <h2 className="text-xl font-bold text-white">Mes Cours</h2>
+        <p className="text-sm text-[#AACBC4] mt-1">Continuez votre apprentissage et passez les quiz de validation.</p>
       </div>
 
       <div className="grid gap-4">
         {courses.map((course) => {
           const courseProgress = getCourseProgress(course._id);
           return (
-            <div
-              key={course._id}
-              className="bg-white border border-gray-200 rounded-xl p-6 hover:border-blue-300 transition-colors"
-            >
+            <div key={course._id}
+              className="bg-[#021B1A] border border-[#03624C]/50 rounded-xl p-6 hover:border-[#00DF81]/50 transition-colors">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">{course.title}</h3>
-                  <p className="text-sm text-gray-600 mb-4">{course.description}</p>
+                  <h3 className="text-lg font-bold text-white mb-2">{course.title}</h3>
+                  <p className="text-sm text-[#AACBC4] mb-4">{course.description}</p>
                 </div>
                 {courseProgress && (
-                  <div className="ml-4 flex-shrink-0">
-                    <div className="text-right">
-                      <p className="text-2xl font-black text-blue-600">{courseProgress.percentage}%</p>
-                      <p className="text-xs text-gray-600">Complété</p>
-                    </div>
+                  <div className="ml-4 flex-shrink-0 text-right">
+                    <p className="text-2xl font-black text-[#00DF81]">{courseProgress.percentage}%</p>
+                    <p className="text-xs text-[#707D7D]">Complété</p>
                   </div>
                 )}
               </div>
 
               <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                <div className="flex items-center gap-1.5 text-sm text-[#AACBC4]">
                   <BookOpen className="w-4 h-4" />
                   <span>{course.lessons.length} leçons</span>
                 </div>
                 {courseProgress && (
-                  <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <div className="flex items-center gap-1.5 text-sm text-[#AACBC4]">
+                    <CheckCircle2 className="w-4 h-4 text-[#00DF81]" />
                     <span>{courseProgress.completedLessons.length} complétées</span>
                   </div>
                 )}
@@ -133,17 +110,13 @@ export const CourseDashboard = () => {
               {courseProgress && <ProgressBar progress={courseProgress} />}
 
               <div className="flex gap-3 mt-4">
-                <Link
-                  to={`/student/lessons/${course.lessons[0]?._id}`}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg text-sm text-center transition-colors"
-                >
+                <Link to={`/student/lessons/${course.lessons[0]?._id}`}
+                  className="flex-1 bg-[#00DF81] hover:bg-[#2CC295] text-[#021B1A] font-bold py-2.5 rounded-lg text-sm text-center transition-colors">
                   Continuer le cours
                 </Link>
                 {courseProgress && courseProgress.percentage > 0 && (
-                  <Link
-                    to={`/student/quiz/${course.lessons[courseProgress.completedLessons.length]?._id}`}
-                    className="flex items-center gap-1.5 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-                  >
+                  <Link to={`/student/quiz/${course.lessons[courseProgress.completedLessons.length]?._id}`}
+                    className="flex items-center gap-1.5 px-4 py-2.5 border border-[#03624C] rounded-lg text-sm font-medium text-[#AACBC4] hover:bg-[#021B1A]/50 hover:text-white transition-colors">
                     <Clock className="w-4 h-4" />
                     Passer le Quiz
                   </Link>

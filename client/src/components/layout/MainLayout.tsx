@@ -49,7 +49,7 @@ export const MainLayout = () => {
   const links = user?.role === 'student' ? studentLinks : adminLinks;
 
   return (
-    <div className="min-h-screen bg-[#F1F7F6]">
+    <div className="min-h-screen bg-[#021B1A]">
       {/* ── Header dark brand ─────────────────────────────────────────────── */}
       <header className="sticky top-0 z-30 bg-[#021B1A] shadow-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
@@ -77,14 +77,14 @@ export const MainLayout = () => {
                 )}
               </button>
               {notifOpen && (
-                <div className="absolute right-0 top-10 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
-                  <div className="px-4 py-2.5 border-b border-gray-100 text-xs font-semibold text-[#03624C] uppercase tracking-wider">
+                <div className="absolute right-0 top-10 w-72 bg-[#032221] border border-[#03624C] rounded-xl shadow-xl z-50 overflow-hidden">
+                  <div className="px-4 py-2.5 border-b border-[#03624C]/50 text-xs font-semibold text-[#00DF81] uppercase tracking-wider">
                     Notifications
                   </div>
                   {notifs.length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-6">Aucune notification</p>
+                    <p className="text-sm text-[#707D7D] text-center py-6">Aucune notification</p>
                   ) : notifs.map(n => (
-                    <div key={n._id} className={`px-4 py-3 text-sm border-b border-gray-50 last:border-0 ${n.isRead ? 'text-gray-400' : 'text-gray-900 font-medium'}`}>
+                    <div key={n._id} className={`px-4 py-3 text-sm border-b border-[#03624C]/30 last:border-0 ${n.isRead ? 'text-[#707D7D]' : 'text-white font-medium'}`}>
                       {n.message}
                     </div>
                   ))}
@@ -104,8 +104,8 @@ export const MainLayout = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex gap-6">
         {/* ── Sidebar ──────────────────────────────────────────────────────── */}
         <nav className="w-52 flex-shrink-0 hidden lg:block">
-          <div className="bg-white border border-[#AACBC4]/30 rounded-xl overflow-hidden sticky top-20 shadow-sm">
-            <div className="px-3 py-3 bg-[#032221]">
+          <div className="bg-[#032221] border border-[#03624C]/50 rounded-xl overflow-hidden sticky top-20 shadow-sm">
+            <div className="px-3 py-3 border-b border-[#03624C]/50">
               <p className="text-xs font-bold uppercase tracking-widest text-[#00DF81]">
                 {user?.role === 'student' ? 'Espace Étudiant' : 'Espace Admin'}
               </p>
@@ -116,8 +116,8 @@ export const MainLayout = () => {
                   <Link to={to}
                     className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
                       ${isActive(to)
-                        ? 'bg-[#00DF81]/15 text-[#03624C] font-semibold border border-[#00DF81]/30'
-                        : 'text-gray-600 hover:bg-[#F1F7F6] hover:text-[#032221]'}`}>
+                        ? 'bg-[#00DF81]/20 text-[#00DF81] font-semibold border border-[#00DF81]/30'
+                        : 'text-[#AACBC4] hover:bg-[#021B1A]/60 hover:text-white'}`}>
                     {icon}
                     {label}
                   </Link>
@@ -129,7 +129,7 @@ export const MainLayout = () => {
 
         {/* ── Contenu principal ─────────────────────────────────────────────── */}
         <main className="flex-1 min-w-0">
-          <div className="bg-white border border-[#AACBC4]/30 rounded-xl p-5 sm:p-6 shadow-sm">
+          <div className="bg-[#032221] border border-[#03624C]/50 rounded-xl p-5 sm:p-6 shadow-sm">
             <Outlet />
           </div>
         </main>
