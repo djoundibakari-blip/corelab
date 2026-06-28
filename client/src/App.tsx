@@ -13,6 +13,7 @@ import { Gradebook } from '@/pages/admin/Gradebook';
 import { CourseManagement } from '@/pages/admin/CourseManagement';
 import { UserManagement } from '@/pages/admin/UserManagement';
 import { ProgressTracking } from '@/pages/admin/ProgressTracking';
+import { StudentProgress } from '@/pages/student/StudentProgress';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
               <Route path="/student/lessons/:lessonId" element={<LessonView />} />
               <Route path="/student/quiz/:lessonId" element={<QuizView />} />
               <Route path="/student/quiz/result/:quizId" element={<QuizView />} />
+              <Route path="/student/progress" element={<StudentProgress />} />
 
               {/* Routes Admin */}
               <Route path="/admin/gradebook" element={<Gradebook />} />

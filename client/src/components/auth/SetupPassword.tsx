@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '@/hooks/useAuth';
+import { GraduationCap, KeyRound } from 'lucide-react';
 
 export const SetupPassword = () => {
   const [password, setPassword] = useState('');
@@ -23,7 +24,7 @@ export const SetupPassword = () => {
       });
       const updated = { ...user, firstLogin: false };
       localStorage.setItem('user', JSON.stringify(updated));
-      navigate(user?.role === 'admin' ? '/admin/gradebook' : '/student/courses');
+      navigate(user?.role === 'admin' ? '/admin/suivi' : '/student/courses');
     } catch (err: any) {
       setError(err?.response?.data?.message ?? 'Erreur serveur');
     } finally {
@@ -31,35 +32,54 @@ export const SetupPassword = () => {
     }
   };
 
+  const inputClass = "w-full px-4 py-2.5 bg-[#021B1A] border border-[#03624C] rounded-lg text-sm text-white placeholder:text-[#707D7D] focus:outline-none focus:ring-2 focus:ring-[#00DF81] transition";
+
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#021B1A] flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">CORE<span className="text-blue-600">LAB</span></h1>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#00DF81] mb-4">
+            <GraduationCap className="w-7 h-7 text-[#021B1A]" />
+          </div>
+          <h1 className="text-3xl font-black text-white tracking-tight">
+            CORE<span className="text-[#00DF81]">LAB</span>
+          </h1>
+          <p className="text-[#AACBC4] text-sm mt-1">Quiz &amp; Notes</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Choisissez votre mot de passe</h2>
-          <p className="text-sm text-gray-500 mb-6">Première connexion — définissez un mot de passe personnel.</p>
+
+        <div className="bg-[#032221] border border-[#03624C] rounded-2xl p-6 shadow-xl">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-[#00DF81]/15 flex items-center justify-center">
+              <KeyRound className="w-4 h-4 text-[#00DF81]" />
+            </div>
+            <h2 className="text-xl font-bold text-white">Choisissez votre mot de passe</h2>
+          </div>
+          <p className="text-sm text-[#707D7D] mb-6 ml-11">Première connexion — définissez un mot de passe personnel.</p>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nouveau mot de passe</label>
+              <label className="block text-sm font-medium text-[#AACBC4] mb-2">Nouveau mot de passe</label>
               <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="6 caractères minimum" required />
+                className={inputClass} placeholder="6 caractères minimum" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Confirmer</label>
+              <label className="block text-sm font-medium text-[#AACBC4] mb-2">Confirmer</label>
               <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="••••••••" required />
+                className={inputClass} placeholder="••••••••" required />
             </div>
-            {error && <div className="bg-red-50 border border-red-300 text-red-700 rounded-lg px-4 py-3 text-sm">{error}</div>}
+
+            {error && (
+              <div className="bg-red-900/30 border border-red-700 text-red-300 rounded-lg px-4 py-3 text-sm">
+                {error}
+              </div>
+            )}
+
             <button type="submit" disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-semibold py-3 rounded-lg transition text-sm">
+              className="w-full bg-[#00DF81] hover:bg-[#2CC295] disabled:opacity-40 text-[#021B1A] font-bold py-3 rounded-lg transition text-sm">
               {loading ? 'Enregistrement...' : 'Confirmer mon mot de passe'}
             </button>
             <button type="button" onClick={logout}
-              className="w-full text-sm text-gray-500 hover:text-gray-700 mt-2">
+              className="w-full text-sm text-[#707D7D] hover:text-[#AACBC4] transition mt-1">
               Se déconnecter
             </button>
           </form>
