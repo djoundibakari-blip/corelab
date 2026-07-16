@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import type { Lesson, Course } from '@/types';
-import { Plus, Edit, Trash2, Save, X, Upload, FileJson } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Upload, FileJson, BookOpen, CheckCircle2, XCircle } from 'lucide-react';
 
 export const LessonManagement = () => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -11,6 +11,7 @@ export const LessonManagement = () => {
   const [quizJson, setQuizJson] = useState('');
   const [quizImporting, setQuizImporting] = useState(false);
   const [quizMsg, setQuizMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [draggingJson, setDraggingJson] = useState(false);
   const quizFileRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -75,7 +76,7 @@ export const LessonManagement = () => {
   };
 
   const handleDeleteLesson = async (lessonId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette leçon ?')) return;
+    if (!confirm('Supprimer cette leçon ?')) return;
     try {
       const token = localStorage.getItem('token');
       await axios.delete(`/api/lessons/${lessonId}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -84,19 +85,33 @@ export const LessonManagement = () => {
     } catch { /* ignore */ }
   };
 
-  const handleQuizFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const loadJsonFile = (file: File) => {
+    if (!file.name.endsWith('.json')) {
+      setQuizMsg({ ok: false, text: 'Format invalide — utilisez un fichier .json' });
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (ev) => setQuizJson(ev.target?.result as string);
     reader.readAsText(file);
+  };
+
+  const handleQuizFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) loadJsonFile(file);
+  };
+
+  const handleJsonDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDraggingJson(false);
+    const file = e.dataTransfer.files[0];
+    if (file) loadJsonFile(file);
   };
 
   const handleImportQuiz = async () => {
     if (!selectedCourse) { setQuizMsg({ ok: false, text: 'Sélectionnez un cours d\'abord.' }); return; }
     if (!quizJson.trim()) { setQuizMsg({ ok: false, text: 'Le JSON est vide.' }); return; }
     let parsed: any;
-    try { parsed = JSON.parse(quizJson); } catch { setQuizMsg({ ok: false, text: 'JSON invalide.' }); return; }
+    try { parsed = JSON.parse(quizJson); } catch { setQuizMsg({ ok: false, text: 'JSON invalide — vérifiez la syntaxe.' }); return; }
     const token = localStorage.getItem('token');
     setQuizImporting(true); setQuizMsg(null);
     try {
@@ -105,13 +120,20 @@ export const LessonManagement = () => {
       setQuizJson('');
       if (quizFileRef.current) quizFileRef.current.value = '';
     } catch (err: any) {
-      setQuizMsg({ ok: false, text: err?.response?.data?.message ?? 'Erreur import' });
+      setQuizMsg({ ok: false, text: err?.response?.data?.message ?? 'Erreur lors de l\'import' });
     } finally { setQuizImporting(false); }
   };
 
-  const inputClass = "w-full px-4 py-2 bg-[#021B1A] border border-[#03624C]/50 rounded-lg text-sm text-white placeholder:text-[#707D7D] focus:ring-2 focus:ring-[#00DF81] focus:outline-none";
+  const inputClass = "w-full px-4 py-2.5 bg-[#021B1A] border border-[#03624C]/50 rounded-lg text-sm text-white placeholder:text-[#707D7D] focus:ring-2 focus:ring-[#00DF81] focus:outline-none";
 
-  if (loading) return <div className="text-center py-8 text-[#AACBC4]">Chargement des leçons...</div>;
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3">
+        <div className="w-8 h-8 border-2 border-[#00DF81] border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-[#707D7D]">Chargement des leçons...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -121,21 +143,34 @@ export const LessonManagement = () => {
         <p className="text-sm text-[#AACBC4] mt-1">Modifiez le contenu pédagogique des cours.</p>
       </div>
 
+      {/* Course selector */}
       <div className="bg-[#021B1A] border border-[#03624C]/50 rounded-xl p-4">
         <label className="block text-sm font-medium text-[#AACBC4] mb-2">Sélectionner un cours</label>
         <select value={selectedCourse || ''} onChange={(e) => setSelectedCourse(e.target.value)}
-          className="w-full px-4 py-2.5 bg-[#021B1A] border border-[#03624C]/50 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#00DF81] transition cursor-pointer">
+          className="w-full px-4 py-2.5 bg-[#032221] border border-[#03624C]/50 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#00DF81] transition cursor-pointer">
           <option value="">-- Choisir un cours --</option>
           {courses.map((course) => (
             <option key={course._id} value={course._id}>{course.title}</option>
           ))}
         </select>
+        {courses.length === 0 && (
+          <p className="text-xs text-amber-400 mt-2">Aucun cours disponible. <a href="/admin/courses" className="text-[#00DF81] hover:underline">Créer un cours →</a></p>
+        )}
       </div>
 
-      {selectedCourse && (
+      {/* Lessons list */}
+      {!selectedCourse ? (
+        <div className="flex flex-col items-center justify-center py-12 gap-3 border border-dashed border-[#03624C]/50 rounded-xl">
+          <BookOpen className="w-10 h-10 text-[#00DF81]/30" />
+          <p className="text-sm text-[#707D7D]">Sélectionnez un cours ci-dessus pour gérer ses leçons.</p>
+        </div>
+      ) : (
         <div className="bg-[#021B1A] border border-[#03624C]/50 rounded-xl overflow-hidden">
           <div className="px-6 py-4 border-b border-[#03624C]/50 flex items-center justify-between">
-            <h3 className="font-semibold text-white">Leçons du cours</h3>
+            <div>
+              <h3 className="font-semibold text-white">Leçons du cours</h3>
+              <p className="text-xs text-[#707D7D] mt-0.5">{lessons.length} leçon{lessons.length > 1 ? 's' : ''}</p>
+            </div>
             <button onClick={handleCreateLesson}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-[#00DF81] hover:bg-[#2CC295] text-[#021B1A] text-sm font-bold rounded-lg transition-colors">
               <Plus className="w-4 h-4" />
@@ -144,23 +179,27 @@ export const LessonManagement = () => {
           </div>
 
           {lessons.length === 0 && !editingLesson ? (
-            <div className="p-8 text-center text-[#707D7D]">Aucune leçon pour ce cours</div>
+            <div className="flex flex-col items-center py-10 gap-3">
+              <BookOpen className="w-8 h-8 text-[#00DF81]/30" />
+              <p className="text-sm text-[#707D7D]">Aucune leçon pour ce cours — cliquez sur «&nbsp;Ajouter&nbsp;» pour commencer.</p>
+            </div>
           ) : (
             <div className="divide-y divide-[#03624C]/30">
               {editingLesson && editingLesson._id.startsWith('new-') && (
-                <div className="p-4">
-                  <div className="space-y-4">
+                <div className="p-5 bg-[#032221]/50">
+                  <p className="text-xs font-semibold text-[#00DF81] uppercase mb-3">Nouvelle leçon</p>
+                  <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-[#AACBC4] mb-1">Titre de la nouvelle leçon</label>
+                      <label className="block text-xs font-medium text-[#AACBC4] mb-1.5">Titre</label>
                       <input type="text" value={editingLesson.title}
                         onChange={(e) => setEditingLesson({ ...editingLesson, title: e.target.value })}
-                        className={inputClass} />
+                        className={inputClass} placeholder="Titre de la leçon" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-[#AACBC4] mb-1">Contenu HTML</label>
+                      <label className="block text-xs font-medium text-[#AACBC4] mb-1.5">Contenu HTML</label>
                       <textarea value={editingLesson.htmlContent}
                         onChange={(e) => setEditingLesson({ ...editingLesson, htmlContent: e.target.value })}
-                        rows={6} className={`${inputClass} font-mono resize-none`} />
+                        rows={6} className={`${inputClass} font-mono resize-none text-xs`} />
                     </div>
                     <div className="flex gap-2">
                       <button onClick={handleSaveLesson} disabled={saving}
@@ -168,7 +207,7 @@ export const LessonManagement = () => {
                         <Save className="w-4 h-4" /> {saving ? 'Création...' : 'Créer la leçon'}
                       </button>
                       <button onClick={() => setEditingLesson(null)}
-                        className="flex items-center gap-1.5 px-4 py-2 border border-[#03624C]/50 text-[#AACBC4] text-sm font-medium rounded-lg hover:bg-[#021B1A]/50">
+                        className="flex items-center gap-1.5 px-4 py-2 border border-[#03624C]/50 text-[#AACBC4] text-sm rounded-lg hover:bg-[#021B1A]/50">
                         <X className="w-4 h-4" /> Annuler
                       </button>
                     </div>
@@ -179,18 +218,18 @@ export const LessonManagement = () => {
               {lessons.map((lesson, index) => (
                 <div key={lesson._id} className="p-4">
                   {editingLesson?._id === lesson._id && !editingLesson._id.startsWith('new-') ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <div>
-                        <label className="block text-sm font-medium text-[#AACBC4] mb-1">Titre de la leçon</label>
+                        <label className="block text-xs font-medium text-[#AACBC4] mb-1.5">Titre</label>
                         <input type="text" value={editingLesson.title}
                           onChange={(e) => setEditingLesson({ ...editingLesson, title: e.target.value })}
                           className={inputClass} />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-[#AACBC4] mb-1">Contenu HTML</label>
+                        <label className="block text-xs font-medium text-[#AACBC4] mb-1.5">Contenu HTML</label>
                         <textarea value={editingLesson.htmlContent}
                           onChange={(e) => setEditingLesson({ ...editingLesson, htmlContent: e.target.value })}
-                          rows={6} className={`${inputClass} font-mono resize-none`} />
+                          rows={6} className={`${inputClass} font-mono resize-none text-xs`} />
                       </div>
                       <div className="flex gap-2">
                         <button onClick={handleSaveLesson} disabled={saving}
@@ -198,25 +237,25 @@ export const LessonManagement = () => {
                           <Save className="w-4 h-4" /> {saving ? 'Sauvegarde...' : 'Sauvegarder'}
                         </button>
                         <button onClick={() => setEditingLesson(null)}
-                          className="flex items-center gap-1.5 px-4 py-2 border border-[#03624C]/50 text-[#AACBC4] text-sm font-medium rounded-lg hover:bg-[#021B1A]/50">
+                          className="flex items-center gap-1.5 px-4 py-2 border border-[#03624C]/50 text-[#AACBC4] text-sm rounded-lg hover:bg-[#021B1A]/50">
                           <X className="w-4 h-4" /> Annuler
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between group">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#00DF81]/20 flex items-center justify-center text-[#00DF81] font-semibold text-sm">
+                        <div className="w-8 h-8 rounded-full bg-[#00DF81]/20 flex items-center justify-center text-[#00DF81] font-bold text-sm flex-shrink-0">
                           {index + 1}
                         </div>
                         <div>
                           <h4 className="font-medium text-white">{lesson.title}</h4>
-                          <p className="text-xs text-[#707D7D]">Ordre: {lesson.order}</p>
+                          <p className="text-xs text-[#707D7D]">Ordre : {lesson.order}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => handleEditLesson(lesson)}
-                          className="p-2 rounded-lg hover:bg-[#021B1A]/50 text-[#AACBC4] hover:text-white transition-colors">
+                          className="p-2 rounded-lg hover:bg-[#00DF81]/10 text-[#AACBC4] hover:text-[#00DF81] transition-colors">
                           <Edit className="w-4 h-4" />
                         </button>
                         <button onClick={() => handleDeleteLesson(lesson._id)}
@@ -233,39 +272,82 @@ export const LessonManagement = () => {
         </div>
       )}
 
-      {/* Import Quiz JSON */}
+      {/* Import Quiz JSON — Drag & Drop */}
       <div className="bg-[#021B1A] border border-[#03624C]/50 rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-[#03624C]/50 flex items-center gap-2">
           <FileJson className="w-4 h-4 text-[#00DF81]" />
           <h3 className="font-semibold text-white">Importer un Quiz (JSON)</h3>
         </div>
-        <div className="p-4 flex flex-col gap-3">
-          <p className="text-xs text-[#707D7D]">
-            Format attendu :
-            <code className="ml-1 bg-[#032221] px-1 rounded text-xs text-[#AACBC4]">
-              {'{"title":"Mon Quiz","questions":[{"questionText":"...","propositions":["A","B"],"correctAnswer":"A"}]}'}
-            </code>
-          </p>
-          <div className="flex gap-2">
-            <input ref={quizFileRef} type="file" accept=".json" className="hidden" onChange={handleQuizFileChange} />
-            <button onClick={() => quizFileRef.current?.click()}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm border border-[#03624C]/50 rounded-lg hover:bg-[#032221] text-[#AACBC4] hover:text-white transition">
-              <Upload className="w-4 h-4" />
-              Charger un fichier .json
-            </button>
-          </div>
-          <textarea value={quizJson} onChange={(e) => setQuizJson(e.target.value)} rows={5}
-            placeholder='{"title": "Mon Quiz", "questions": [...]}'
-            className="w-full px-3 py-2 bg-[#021B1A] border border-[#03624C]/50 rounded-lg text-xs font-mono text-white placeholder:text-[#707D7D] focus:outline-none focus:ring-2 focus:ring-[#00DF81] resize-none" />
-          {quizMsg && (
-            <p className={`text-sm font-medium ${quizMsg.ok ? 'text-[#00DF81]' : 'text-red-400'}`}>{quizMsg.text}</p>
+        <div className="p-5 flex flex-col gap-4">
+          {!selectedCourse && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-amber-900/20 border border-amber-700/40 rounded-lg text-xs text-amber-300">
+              ⚠ Sélectionnez un cours ci-dessus avant d'importer un quiz.
+            </div>
           )}
-          <button onClick={handleImportQuiz} disabled={quizImporting || !selectedCourse}
-            className="self-start flex items-center gap-1.5 px-4 py-2 bg-[#00DF81] hover:bg-[#2CC295] text-[#021B1A] text-sm font-bold rounded-lg transition disabled:opacity-40">
-            <Plus className="w-4 h-4" />
-            {quizImporting ? 'Import...' : 'Importer le quiz'}
+
+          <div>
+            <p className="text-xs text-[#707D7D] mb-3">
+              Format attendu :{' '}
+              <code className="bg-[#032221] px-1.5 py-0.5 rounded text-[#AACBC4]">
+                {'{"title":"Mon Quiz","questions":[{"questionText":"...","propositions":["A","B"],"correctAnswer":"A"}]}'}
+              </code>
+            </p>
+
+            {/* Drag & drop zone for JSON */}
+            <input ref={quizFileRef} type="file" accept=".json" className="hidden" onChange={handleQuizFileChange} />
+            <div
+              onClick={() => quizFileRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setDraggingJson(true); }}
+              onDragLeave={() => setDraggingJson(false)}
+              onDrop={handleJsonDrop}
+              className={`cursor-pointer border-2 border-dashed rounded-xl p-6 flex flex-col items-center gap-2 transition-all
+                ${draggingJson
+                  ? 'border-[#00DF81] bg-[#00DF81]/10 scale-[1.01]'
+                  : quizJson ? 'border-[#00DF81]/40 bg-[#00DF81]/5' : 'border-[#03624C]/50 hover:border-[#00DF81]/50 hover:bg-[#00DF81]/5'
+                }`}>
+              {quizJson ? (
+                <>
+                  <CheckCircle2 className="w-6 h-6 text-[#00DF81]" />
+                  <p className="text-sm font-semibold text-[#00DF81]">Fichier JSON chargé</p>
+                  <p className="text-xs text-[#707D7D]">Cliquez pour en charger un autre</p>
+                </>
+              ) : (
+                <>
+                  <Upload className={`w-6 h-6 ${draggingJson ? 'text-[#00DF81]' : 'text-[#AACBC4]'}`} />
+                  <p className={`text-sm font-semibold ${draggingJson ? 'text-[#00DF81]' : 'text-white'}`}>
+                    {draggingJson ? 'Relâchez pour charger' : 'Glissez votre fichier .json ici'}
+                  </p>
+                  <p className="text-xs text-[#707D7D]">ou cliquez pour parcourir</p>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* JSON textarea */}
+          <div>
+            <label className="block text-xs font-medium text-[#AACBC4] mb-1.5">Contenu JSON</label>
+            <textarea value={quizJson} onChange={(e) => setQuizJson(e.target.value)} rows={6}
+              placeholder='{"title": "Mon Quiz", "questions": [...]}'
+              className="w-full px-3 py-2.5 bg-[#032221] border border-[#03624C]/50 rounded-lg text-xs font-mono text-white placeholder:text-[#707D7D] focus:outline-none focus:ring-2 focus:ring-[#00DF81] resize-none" />
+          </div>
+
+          {quizMsg && (
+            <div className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm border
+              ${quizMsg.ok
+                ? 'bg-[#00DF81]/15 border-[#00DF81]/30 text-[#00DF81]'
+                : 'bg-red-900/30 border-red-700/50 text-red-400'}`}>
+              {quizMsg.ok ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <XCircle className="w-4 h-4 flex-shrink-0" />}
+              {quizMsg.text}
+            </div>
+          )}
+
+          <button onClick={handleImportQuiz} disabled={quizImporting || !selectedCourse || !quizJson.trim()}
+            className="self-start flex items-center gap-1.5 px-5 py-2.5 bg-[#00DF81] hover:bg-[#2CC295] text-[#021B1A] text-sm font-bold rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed">
+            {quizImporting
+              ? <><div className="w-4 h-4 border-2 border-[#021B1A] border-t-transparent rounded-full animate-spin" /> Import en cours...</>
+              : <><Plus className="w-4 h-4" /> Importer le quiz</>
+            }
           </button>
-          {!selectedCourse && <p className="text-xs text-amber-400">Sélectionnez un cours ci-dessus avant d'importer.</p>}
         </div>
       </div>
     </div>
